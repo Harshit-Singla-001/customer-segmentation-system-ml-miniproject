@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Login — Customer Segmentation System{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="card form-card">
+        <h2>Admin Authentication</h2>
+        <p class="text-muted">Sign in to access administrative analytics and database management.</p>
+
+        <form action="{{ url_for('admin.login') }}" method="POST">
+            <div class="form-group">
+                <label for="username">Admin Username</label>
+                <input type="text" id="username" name="username" required class="form-control" placeholder="admin">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required class="form-control" placeholder="••••••••">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Sign In to Dashboard</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

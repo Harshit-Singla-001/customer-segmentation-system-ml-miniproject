@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Directory — Admin Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Customer Directory</h2>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline">&larr; Back to Dashboard</a>
+</div>
+
+<div class="card mt-4">
+    {% if customers %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Income</th>
+                <th>Age</th>
+                <th>Orders</th>
+                <th>Total Spent</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in customers %}
+            <tr>
+                <td>#{{ c.customer_id }}</td>
+                <td><strong>{{ c.name }}</strong></td>
+                <td>{{ c.email }}</td>
+                <td>{{ c.phone }}</td>
+                <td>{% if c.income %}${{ "%.2f"|format(c.income) }}{% else %}N/A{% endif %}</td>
+                <td>{{ c.age or 'N/A' }}</td>
+                <td>{{ c.order_count }}</td>
+                <td>${{ "%.2f"|format(c.total_spent) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">No registered customers in database.</p>
+    {% endif %}
+</div>
+{% endblock %}

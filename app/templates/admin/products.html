@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Product Catalog Management — Admin Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Catalog Management</h2>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline">&larr; Back to Dashboard</a>
+</div>
+
+<div class="grid grid-3-1 mt-4">
+    <div class="card">
+        <h3>Catalog Products</h3>
+        {% if products %}
+        <table class="table mt-3">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td>#{{ p.product_id }}</td>
+                    <td><strong>{{ p.name }}</strong></td>
+                    <td><span class="badge badge-info">{{ p.category }}</span></td>
+                    <td>${{ "%.2f"|format(p.price) }}</td>
+                    <td>{{ p.stock_quantity }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted mt-3">No products available in catalog.</p>
+        {% endif %}
+    </div>
+
+    <div class="card form-card">
+        <h3>Add New Product</h3>
+        <form action="{{ url_for('admin.products') }}" method="POST" class="mt-3">
+            <div class="form-group">
+                <label for="name">Product Name *</label>
+                <input type="text" id="name" name="name" required class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="category">Category *</label>
+                <input type="text" id="category" name="category" required class="form-control" placeholder="Electronics, Furniture...">
+            </div>
+
+            <div class="form-group">
+                <label for="price">Price ($) *</label>
+                <input type="number" id="price" name="price" step="0.01" min="0" required class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="stock">Stock Quantity *</label>
+                <input type="number" id="stock" name="stock" min="0" required class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" class="form-control" rows="3"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Add Product</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

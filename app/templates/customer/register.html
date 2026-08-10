@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Details — Customer Segmentation System{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="card form-card">
+        <h2>Customer Registration</h2>
+        <p class="text-muted">Enter customer details before browsing the product catalog.</p>
+
+        <form action="{{ url_for('customer.register') }}" method="POST">
+            <div class="form-group">
+                <label for="name">Full Name *</label>
+                <input type="text" id="name" name="name" required class="form-control" placeholder="e.g. John Doe">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" name="email" required class="form-control" placeholder="john@example.com">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number *</label>
+                <input type="tel" id="phone" name="phone" required class="form-control" placeholder="+1 555-0199">
+            </div>
+
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label for="income">Annual Income ($)</label>
+                    <input type="number" id="income" name="income" step="500" class="form-control" placeholder="e.g. 65000">
+                </div>
+
+                <div class="form-group">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" name="age" min="18" max="100" class="form-control" placeholder="e.g. 32">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender" class="form-control">
+                    <option value="">Select Gender...</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Continue to Shop</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

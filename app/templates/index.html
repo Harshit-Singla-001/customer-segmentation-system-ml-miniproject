@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Segmentation System — Home{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-text">
+        <span class="pill-tag">DBMS + Machine Learning</span>
+        <h1>Intelligent Customer Segmentation using K-Means Clustering</h1>
+        <p class="hero-lead">
+            An educational full-stack DBMS application combining MySQL data management with Scikit-Learn unsupervised clustering to identify valuable customer segments.
+        </p>
+        <div class="hero-actions">
+            <a href="{{ url_for('customer.register') }}" class="btn btn-primary btn-lg">Explore Customer Storefront</a>
+            <a href="{{ url_for('admin.login') }}" class="btn btn-secondary btn-lg">Admin Analytics Console</a>
+        </div>
+    </div>
+</div>
+
+<div class="status-card">
+    <h3>System Status & Database Setup</h3>
+    <div class="status-indicator-box">
+        {% if db_connected %}
+            <div class="status-pill status-success">
+                <span class="dot"></span> MySQL Database Connected
+            </div>
+            <p>Your database connection is active and ready.</p>
+        {% else %}
+            <div class="status-pill status-warning">
+                <span class="dot"></span> MySQL Connection Required
+            </div>
+            <p>Click below to automatically create and initialize the database schema.</p>
+        {% endif %}
+    </div>
+    <form action="{{ url_for('main.initialize_database') }}" method="POST" class="mt-3">
+        <button type="submit" class="btn btn-outline">Initialize / Reset MySQL Database</button>
+    </form>
+</div>
+
+<div class="grid grid-3 mt-5">
+    <div class="card feature-card">
+        <div class="card-icon">🛒</div>
+        <h3>1. Storefront Simulation</h3>
+        <p>Customers register their details and make simulated purchases stored in normalized MySQL tables.</p>
+    </div>
+    <div class="card feature-card">
+        <div class="card-icon">📊</div>
+        <h3>2. K-Means Analytics</h3>
+        <p>Run K-Means clustering on customer spending behavior, purchase frequency, and demographic indicators.</p>
+    </div>
+    <div class="card feature-card">
+        <div class="card-icon">📈</div>
+        <h3>3. Interactive Reports</h3>
+        <p>Visualize cluster profiles, customer groupings, and export segment analytics for business intelligence.</p>
+    </div>
+</div>
+{% endblock %}

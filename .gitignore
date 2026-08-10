@@ -1,0 +1,27 @@
+# Python bytecode & cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+
+# Markdown files (ignore all .md files except README.md)
+*.md
+!README.md
+
+# Uploads & temporary runtime files
+uploads/*
+!uploads/.gitkeep
+exports/*
+!exports/.gitkeep
