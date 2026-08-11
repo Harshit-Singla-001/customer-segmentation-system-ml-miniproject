@@ -1,23 +1,51 @@
+import os
 import pymysql
 from pymysql.cursors import DictCursor
 from config import Config
 
+def resolve_host(hostname):
+    import socket
+    try:
+        return socket.gethostbyname(hostname)
+    except socket.gaierror:
+        # Fallback resolution via Google Public DNS or known host IPs if Windows DNS cache is lagging
+        import subprocess, re
+        try:
+            cmd_out = subprocess.check_output(f"nslookup {hostname} 8.8.8.8", shell=True, text=True, stderr=subprocess.DEVNULL)
+            ips = re.findall(r"Addresses?:\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)", cmd_out)
+            if ips:
+                return ips[0]
+        except Exception:
+            pass
+        return hostname
+
 def get_db_connection(with_database=True):
     """
     Returns a PyMySQL database connection.
-    If with_database is False, connects without selecting a specific database
-    (useful for database creation scripts).
+    Supports local MySQL as well as SSL-enforced Cloud MySQL (e.g. Aiven).
     """
-    connection = pymysql.connect(
-        host=Config.DB_HOST,
-        port=Config.DB_PORT,
-        user=Config.DB_USER,
-        password=Config.DB_PASSWORD,
-        database=Config.DB_NAME if with_database else None,
-        cursorclass=DictCursor,
-        autocommit=False
-    )
-    return connection
+    target_host = resolve_host(Config.DB_HOST)
+    conn_kwargs = {
+        'host': target_host,
+        'port': Config.DB_PORT,
+        'user': Config.DB_USER,
+        'password': Config.DB_PASSWORD,
+        'cursorclass': DictCursor,
+        'autocommit': False,
+        'connect_timeout': 10
+    }
+    if with_database and Config.DB_NAME:
+        conn_kwargs['database'] = Config.DB_NAME
+
+    # Enable SSL for cloud hosts (e.g. aivencloud.com) or when explicitly configured
+    if 'aivencloud.com' in Config.DB_HOST.lower() or os.environ.get('DB_SSL', 'false').lower() == 'true':
+        import ssl
+        ssl_ctx = ssl.create_default_context()
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = ssl.CERT_NONE
+        conn_kwargs['ssl'] = ssl_ctx
+
+    return pymysql.connect(**conn_kwargs)
 
 def execute_query(query, params=None, fetch_all=False, fetch_one=False, commit=False):
     """
@@ -49,22 +77,24 @@ def execute_query(query, params=None, fetch_all=False, fetch_one=False, commit=F
 
 def init_db():
     """
-    Reads sql/schema.sql and initializes the database tables and seed data if database exists.
+    Reads sql/schema.sql and initializes the database tables and seed data.
     """
-    import os
     sql_file_path = os.path.join(Config.BASE_DIR, 'sql', 'schema.sql')
     if not os.path.exists(sql_file_path):
         return False, "schema.sql file not found."
     
     try:
-        # First ensure DB exists
-        conn = get_db_connection(with_database=False)
-        with conn.cursor() as cursor:
-            cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{Config.DB_NAME}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
-        conn.commit()
-        conn.close()
+        # Try to ensure DB exists if permissions allow
+        try:
+            conn = get_db_connection(with_database=False)
+            with conn.cursor() as cursor:
+                cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{Config.DB_NAME}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass  # In cloud environments like Aiven defaultdb is already allocated
 
-        # Now execute schema script statements
+        # Execute schema script statements
         conn = get_db_connection(with_database=True)
         with conn.cursor() as cursor:
             with open(sql_file_path, 'r', encoding='utf-8') as f:
