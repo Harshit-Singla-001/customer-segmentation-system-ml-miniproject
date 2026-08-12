@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS customers (
     income DECIMAL(12, 2) DEFAULT NULL,
     age INT DEFAULT NULL,
     gender VARCHAR(10) DEFAULT NULL,
+    city VARCHAR(50) DEFAULT NULL,
+    status VARCHAR(20) DEFAULT 'Active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -33,6 +35,7 @@ CREATE TABLE IF NOT EXISTS products (
     category VARCHAR(50) NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
     stock_quantity INT NOT NULL DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'Active',
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;

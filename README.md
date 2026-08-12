@@ -9,19 +9,33 @@ An educational full-stack DBMS & Data Science project built with **Flask**, **My
 The **Customer Segmentation System** demonstrates how customer details, purchasing history, and imported datasets are stored in a MySQL relational database and analyzed using machine learning (K-Means Clustering) to discover customer segments.
 
 ### Key Capabilities
-- **Shopping Simulation**: Browse products, add items to cart, and place orders.
-- **Admin Dashboard**: Manage products, customers, transactions, and imported datasets.
-- **Data Preprocessing & Segmentation**: Standardize numerical customer metrics (spending, frequency, income, age) and apply K-Means clustering.
-- **Interactive Visualizations & Analytics**: View cluster distributions, segment characteristics, and download reports.
+- **Synthetic Dataset Generator**: Create realistic, seedable, normalized datasets with hidden customer behavior profiles (`scripts/generate_dataset.py`).
+- **Direct Database Importer**: High-performance bulk import of CSV records into online MySQL (`scripts/import_to_db.py`).
+- **Customer Shopping Portal**: Browse products, view stock availability, manage cart, and place orders.
+- **Admin Management Panel**: Manage products, customers, transactions, dataset imports, and run clustering algorithms.
+- **K-Means Analytics**: Standardize numerical customer metrics (spending, frequency, income, age) and analyze discovered customer segments.
+
+---
+
+## 🔑 Default Admin Credentials
+
+To access the Administrator Dashboard, navigate to `http://127.0.0.1:5000/admin/login` and use the following seeded admin credentials:
+
+| Setting | Value |
+| :--- | :--- |
+| **Admin Login URL** | `http://127.0.0.1:5000/admin/login` |
+| **Username** | `admin` |
+| **Password** | `admin123` |
+| **Email** | `admin@example.com` |
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Python 3.x, Flask, MySQL Connector / SQLAlchemy
-- **Database**: MySQL 8.x
-- **Machine Learning & Data Processing**: Pandas, NumPy, Scikit-Learn
-- **Frontend**: HTML5, CSS3 (Vanilla), JavaScript (ES6+), Chart.js
+- **Backend**: Python 3.x, Flask, PyMySQL (with SSL support)
+- **Database**: MySQL 8.x (Cloud MySQL on Aiven / Local MySQL)
+- **Machine Learning & Analytics**: Pandas, NumPy, Scikit-Learn, Faker
+- **Frontend**: HTML5, Vanilla CSS3, JavaScript (ES6+), Chart.js
 
 ---
 
@@ -30,59 +44,91 @@ The **Customer Segmentation System** demonstrates how customer details, purchasi
 ```
 customer-segmentation-system/
 ├── app/                     # Flask Application Source Code
-│   ├── static/              # CSS, JS, and Images
-│   ├── templates/           # HTML Jinja2 Templates
-│   ├── routes/              # Blueprint Route Handlers
-│   ├── services/            # Business Logic & Service Layer
-│   ├── db/                  # Database Connections & Queries
+│   ├── static/              # CSS, JS, and UI static assets
+│   ├── templates/           # Jinja2 HTML Templates
+│   ├── routes/              # Blueprint Handlers (main, customer, admin)
+│   ├── services/            # Business Logic & Analytical Services
+│   ├── db/                  # PyMySQL Connection & Query Handlers
 │   └── ml/                  # K-Means Machine Learning Pipeline
-├── sql/                     # Database Schemas and Seed Data
+├── generated_dataset/       # Output CSVs from Synthetic Dataset Generator
+│   ├── customers.csv        # 750 Customer Records
+│   ├── products.csv         # 20 Product Catalog Items
+│   ├── purchases.csv        # 7,500 Order Master Records
+│   ├── purchase_items.csv   # 13,057 Order Line Items
+│   ├── customer_features.csv# 750 Derived Customer Analytical Metrics
+│   └── dataset_summary.txt  # Dataset Analytical Summary Report
+├── scripts/                 # Utility & Dataset Generator Scripts
+│   ├── generate_dataset.py  # Synthetic Dataset Generator Engine
+│   ├── import_to_db.py      # MySQL Bulk Importer Script
+│   └── init_db.py          # Database Schema Initializer
+├── sql/                     # Relational Schemas and Initial Seeds
+│   └── schema.sql           # MySQL Table Definitions & Indexes
 ├── uploads/                 # Storage for imported CSV datasets
-├── config.py                # Environment Configuration
-├── app.py                   # Application Entry Point
-├── requirements.txt         # Python Dependencies
-├── .env.example             # Environment Variables Template
+├── config.py                # App Configuration & Environment Loader
+├── app.py                   # Flask Application Entrypoint
+├── requirements.txt         # Project Dependencies
+├── .env                     # Database & Environment Secrets
 └── README.md                # Project Documentation
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quickstart Guide
 
-### Prerequisites
-- Python 3.9+
-- MySQL Server 8.0+
+### 1. Prerequisites
+- Python 3.9+ installed
+- MySQL Server 8.0+ (or active Aiven Cloud MySQL connection)
 
-### Setup Instructions
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/customer-segmentation-system.git
-   cd customer-segmentation-system
+### 3. Initialize Database & Import Data
+
+1. **Configure Environment Variables**: Ensure your `.env` contains valid MySQL credentials:
+   ```env
+   DB_HOST=mysql-10da54c1-customer-segmentation.j.aivencloud.com
+   DB_PORT=21978
+   DB_USER=avnadmin
+   DB_PASSWORD=YOUR_PASSWORD
+   DB_NAME=customer_segmentation_db
+   DB_SSL=true
    ```
 
-2. **Create a virtual environment**
+2. **Initialize Database Tables**:
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python scripts/init_db.py
    ```
 
-3. **Install dependencies**
+3. **Generate Synthetic Dataset (Optional)**:
    ```bash
-   pip install -r requirements.txt
+   python scripts/generate_dataset.py
    ```
 
-4. **Database Configuration**
-   - Copy `.env.example` to `.env` and set your MySQL credentials.
-   - Import the database schema from `sql/schema.sql`.
-
-5. **Run the Application**
+4. **Bulk Import Data into MySQL**:
    ```bash
-   python app.py
+   python scripts/import_to_db.py
    ```
-   Open `http://127.0.0.1:5000` in your browser.
+
+### 4. Run the Application
+```bash
+python app.py
+```
+Open **[http://127.0.0.1:5000](http://127.0.0.1:5000)** in your browser.
+
+---
+
+## 📊 Database Entities & Schema
+
+- **`customers`**: Customer demographics (`customer_id`, `name`, `email`, `phone`, `income`, `age`, `gender`, `city`, `status`, `created_at`)
+- **`products`**: Item catalog (`product_id`, `name`, `category`, `price`, `stock_quantity`, `status`, `description`)
+- **`purchases`**: Transaction records (`purchase_id`, `customer_id`, `total_amount`, `status`, `purchase_date`)
+- **`purchase_items`**: Itemized order lines (`item_id`, `purchase_id`, `product_id`, `quantity`, `unit_price`, `subtotal`)
+- **`admins`**: Secured administrator accounts (`admin_id`, `username`, `password_hash`, `email`)
+- **`clusters`**: K-Means segmentation results (`cluster_id`, `customer_id`, `cluster_label`, `cluster_name`, `annual_income`, `total_spending`, `purchase_frequency`, `algorithm`)
 
 ---
 
 ## 📄 License
-Educational / Open Source Project.
+Educational / Open Source DBMS & ML Project.

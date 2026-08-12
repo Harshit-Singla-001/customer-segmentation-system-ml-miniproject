@@ -3,43 +3,122 @@
 {% block title %}Customer Directory — Admin Portal{% endblock %}
 
 {% block content %}
+
 <div class="page-header">
-    <h2>Customer Directory</h2>
-    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline">&larr; Back to Dashboard</a>
+    <div class="page-header-left">
+        <h1>Customer Directory</h1>
+        <p>Manage all registered customers — view orders, income, and segmentation status.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline btn-sm">&larr; Dashboard</a>
+    </div>
 </div>
 
-<div class="card mt-4">
+<!-- Admin Sub-Nav -->
+<div class="admin-sidebar-nav mb-3">
+    <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        Overview
+    </a>
+    <a href="{{ url_for('admin.customers') }}" class="admin-nav-item active">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        Customers
+    </a>
+    <a href="{{ url_for('admin.products') }}" class="admin-nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        </svg>
+        Products
+    </a>
+    <a href="{{ url_for('admin.purchases') }}" class="admin-nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+        </svg>
+        Purchases
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3>All Customers ({{ customers | length }})</h3>
+    </div>
     {% if customers %}
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Income</th>
-                <th>Age</th>
-                <th>Orders</th>
-                <th>Total Spent</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for c in customers %}
-            <tr>
-                <td>#{{ c.customer_id }}</td>
-                <td><strong>{{ c.name }}</strong></td>
-                <td>{{ c.email }}</td>
-                <td>{{ c.phone }}</td>
-                <td>{% if c.income %}${{ "%.2f"|format(c.income) }}{% else %}N/A{% endif %}</td>
-                <td>{{ c.age or 'N/A' }}</td>
-                <td>{{ c.order_count }}</td>
-                <td>${{ "%.2f"|format(c.total_spent) }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Contact</th>
+                    <th>City</th>
+                    <th>Annual Income</th>
+                    <th>Orders</th>
+                    <th>Total Spent</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td><span class="text-muted font-mono">#{{ c.customer_id }}</span></td>
+                    <td>
+                        <div class="fw-600">{{ c.name }}</div>
+                        <small class="text-muted">Age: {{ c.age or '—' }} · {{ c.gender or '—' }}</small>
+                    </td>
+                    <td>
+                        <div>{{ c.phone }}</div>
+                        <small class="text-muted">{{ c.email }}</small>
+                    </td>
+                    <td>{{ c.city or '—' }}</td>
+                    <td>{% if c.income %}{{ c.income | inr }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    <td><span class="badge badge-category">{{ c.order_count }}</span></td>
+                    <td class="fw-700">{{ c.total_spent | inr }}</td>
+                    <td>
+                        {% if c.status == 'Inactive' %}
+                            <span class="badge badge-stock-out">Inactive</span>
+                        {% else %}
+                            <span class="badge badge-stock-ok">Active</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1 align-center">
+                            <form action="{{ url_for('admin.toggle_customer_status', customer_id=c.customer_id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-outline btn-sm">
+                                    {% if c.status == 'Inactive' %}Activate{% else %}Deactivate{% endif %}
+                                </button>
+                            </form>
+                            <form action="{{ url_for('admin.delete_customer', customer_id=c.customer_id) }}" method="POST" style="display:inline;"
+                                  onsubmit="return confirm('Permanently delete customer {{ c.name }}?');">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% else %}
-    <p class="text-muted">No registered customers in database.</p>
+        <div class="card-body">
+            <p class="text-muted text-center">No customers found in database.</p>
+        </div>
     {% endif %}
 </div>
+
 {% endblock %}

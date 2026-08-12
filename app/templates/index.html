@@ -1,57 +1,152 @@
 {% extends "base.html" %}
 
-{% block title %}Customer Segmentation System — Home{% endblock %}
+{% block title %}Product Catalog — SegmentIQ{% endblock %}
 
 {% block content %}
-<div class="hero-section">
-    <div class="hero-text">
-        <span class="pill-tag">DBMS + Machine Learning</span>
-        <h1>Intelligent Customer Segmentation using K-Means Clustering</h1>
-        <p class="hero-lead">
-            An educational full-stack DBMS application combining MySQL data management with Scikit-Learn unsupervised clustering to identify valuable customer segments.
-        </p>
-        <div class="hero-actions">
-            <a href="{{ url_for('customer.register') }}" class="btn btn-primary btn-lg">Explore Customer Storefront</a>
-            <a href="{{ url_for('admin.login') }}" class="btn btn-secondary btn-lg">Admin Analytics Console</a>
+
+<!-- ── Hero Banner ────────────────────────────────────────────────── -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-eyebrow">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>
+            Smart Retail Storefront — K‑Means Segmentation Project
+        </div>
+        <h1>Discover Premium<br>Products Instantly</h1>
+        <p>Browse our curated catalog, add items to your cart, and experience instant mobile-verified checkout. No passwords required.</p>
+
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <span class="hero-stat-value">{{ products | length }}</span>
+                <span class="hero-stat-label">Products Listed</span>
+            </div>
+            <div class="hero-stat">
+                <span class="hero-stat-value">{{ categories | length }}</span>
+                <span class="hero-stat-label">Categories</span>
+            </div>
+            <div class="hero-stat">
+                <span class="hero-stat-value">Free</span>
+                <span class="hero-stat-label">Delivery Always</span>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <div class="search-bar-inner">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="productSearch" class="search-input"
+                    placeholder="Search products, categories…" autocomplete="off">
+            </div>
         </div>
     </div>
+</section>
+
+<!-- ── Category Pills ──────────────────────────────────────────────── -->
+<div class="pills-row" id="categoryPills">
+    <button class="pill active" data-category="all">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        All Products
+    </button>
+    {% for cat in categories %}
+        <button class="pill" data-category="{{ cat }}">{{ cat }}</button>
+    {% endfor %}
 </div>
 
-<div class="status-card">
-    <h3>System Status & Database Setup</h3>
-    <div class="status-indicator-box">
-        {% if db_connected %}
-            <div class="status-pill status-success">
-                <span class="dot"></span> MySQL Database Connected
-            </div>
-            <p>Your database connection is active and ready.</p>
-        {% else %}
-            <div class="status-pill status-warning">
-                <span class="dot"></span> MySQL Connection Required
-            </div>
-            <p>Click below to automatically create and initialize the database schema.</p>
-        {% endif %}
+<!-- ── Products ────────────────────────────────────────────────────── -->
+<div class="section-header">
+    <div class="d-flex align-center gap-2">
+        <h2 class="section-title">Available Products</h2>
+        <span class="count-badge" id="visibleCount">{{ products | length }}</span>
     </div>
-    <form action="{{ url_for('main.initialize_database') }}" method="POST" class="mt-3">
-        <button type="submit" class="btn btn-outline">Initialize / Reset MySQL Database</button>
-    </form>
 </div>
 
-<div class="grid grid-3 mt-5">
-    <div class="card feature-card">
-        <div class="card-icon">🛒</div>
-        <h3>1. Storefront Simulation</h3>
-        <p>Customers register their details and make simulated purchases stored in normalized MySQL tables.</p>
+{% if not products %}
+    <div class="empty-state card">
+        <div class="card-body">
+            <div class="empty-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                </svg>
+            </div>
+            <h2>No Products Found</h2>
+            <p>Run the database import script to load product catalog.</p>
+        </div>
     </div>
-    <div class="card feature-card">
-        <div class="card-icon">📊</div>
-        <h3>2. K-Means Analytics</h3>
-        <p>Run K-Means clustering on customer spending behavior, purchase frequency, and demographic indicators.</p>
+{% else %}
+    <div class="product-grid" id="productGrid">
+        {% for prod in products %}
+            <div class="product-card"
+                 data-category="{{ prod.category }}"
+                 data-name="{{ prod.name | lower }}"
+                 data-desc="{{ prod.description | lower if prod.description else '' }}">
+
+                <div class="product-card-header">
+                    <span class="badge badge-category">{{ prod.category }}</span>
+                    {% if prod.status == 'Out of Stock' or prod.stock_quantity <= 0 %}
+                        <span class="badge badge-stock-out">
+                            <svg width="9" height="9" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+                            Out of Stock
+                        </span>
+                    {% else %}
+                        <span class="badge badge-stock-ok">
+                            <svg width="9" height="9" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+                            {{ prod.stock_quantity }} left
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="product-card-body">
+                    <h3 class="product-card-name">{{ prod.name }}</h3>
+                    <p class="product-card-desc">{{ prod.description }}</p>
+                </div>
+
+                <div class="product-card-footer">
+                    <div class="price-display">
+                        <span class="price-label">Price</span>
+                        <span class="price-value">{{ prod.price | inr }}</span>
+                    </div>
+
+                    {% if prod.status != 'Out of Stock' and prod.stock_quantity > 0 %}
+                        <form action="{{ url_for('customer.add_to_cart') }}" method="POST" class="add-cart-row">
+                            <input type="hidden" name="product_id" value="{{ prod.product_id }}">
+                            <input type="hidden" name="redirect_to" value="main.index">
+                            <input type="number" name="quantity" value="1" min="1"
+                                   max="{{ prod.stock_quantity }}" class="qty-input" aria-label="Quantity">
+                            <button type="submit" class="btn btn-primary btn-sm" id="add-cart-{{ prod.product_id }}">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="9" cy="21" r="1"></circle>
+                                    <circle cx="20" cy="21" r="1"></circle>
+                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                </svg>
+                                Add
+                            </button>
+                        </form>
+                    {% else %}
+                        <button class="btn btn-disabled btn-sm" disabled>Out of Stock</button>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
     </div>
-    <div class="card feature-card">
-        <div class="card-icon">📈</div>
-        <h3>3. Interactive Reports</h3>
-        <p>Visualize cluster profiles, customer groupings, and export segment analytics for business intelligence.</p>
+
+    <!-- No results message (shown by JS) -->
+    <div id="noResults" style="display:none;" class="empty-state">
+        <div class="empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+        </div>
+        <h2>No Products Match</h2>
+        <p>Try a different search term or category.</p>
     </div>
-</div>
+{% endif %}
+
 {% endblock %}

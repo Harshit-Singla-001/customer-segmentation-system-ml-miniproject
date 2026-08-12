@@ -1,68 +1,272 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Dashboard — Customer Segmentation System{% endblock %}
+{% block title %}Admin Dashboard — SegmentIQ{% endblock %}
 
 {% block content %}
+
+<!-- Page Header -->
 <div class="page-header">
-    <div>
-        <h2>Admin Overview & Analytics</h2>
-        <p class="text-muted">Welcome back, <strong>{{ session.get('admin_username') }}</strong>!</p>
+    <div class="page-header-left">
+        <h1>Admin Dashboard</h1>
+        <p>Welcome back, <strong>{{ session.get('admin_username', 'Admin') }}</strong> — Real-time business overview.</p>
     </div>
-    <div class="header-actions">
-        <a href="{{ url_for('admin.customers') }}" class="btn btn-outline">Customer Directory</a>
-        <a href="{{ url_for('admin.products') }}" class="btn btn-outline">Manage Catalog</a>
+    <div class="page-actions">
+        <a href="{{ url_for('admin.customers') }}" class="btn btn-outline btn-sm">Customers</a>
+        <a href="{{ url_for('admin.products') }}" class="btn btn-outline btn-sm">Products</a>
+        <a href="{{ url_for('admin.purchases') }}" class="btn btn-outline btn-sm">Purchases</a>
+        <a href="{{ url_for('admin.logout') }}" class="btn btn-danger btn-sm">Logout</a>
     </div>
 </div>
 
-<div class="grid grid-4 mt-4">
-    <div class="card metric-card">
-        <div class="metric-value">{{ cust_count }}</div>
-        <div class="metric-label">Total Customers</div>
+<!-- Admin Sub-Nav -->
+<div class="admin-sidebar-nav mb-3">
+    <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-item active">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        Overview
+    </a>
+    <a href="{{ url_for('admin.customers') }}" class="admin-nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        Customers
+    </a>
+    <a href="{{ url_for('admin.products') }}" class="admin-nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        </svg>
+        Products
+    </a>
+    <a href="{{ url_for('admin.purchases') }}" class="admin-nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+        </svg>
+        Purchases
+    </a>
+</div>
+
+<!-- ── 8 Metric Cards ─────────────────────────────────────────────── -->
+<div class="metrics-grid">
+    <!-- Total Customers -->
+    <div class="metric-card">
+        <div class="metric-card-top">
+            <div class="metric-icon metric-icon-primary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <span class="metric-trend trend-neu">Total</span>
+        </div>
+        <div class="metric-value">{{ cust_total }}</div>
+        <div class="metric-label">Registered Customers</div>
     </div>
 
-    <div class="card metric-card">
-        <div class="metric-value">{{ prod_count }}</div>
-        <div class="metric-label">Catalog Products</div>
+    <!-- Active Customers -->
+    <div class="metric-card">
+        <div class="metric-card-top">
+            <div class="metric-icon metric-icon-success">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+            <span class="metric-trend trend-up">Active</span>
+        </div>
+        <div class="metric-value">{{ cust_active }}</div>
+        <div class="metric-label">Active Customers</div>
     </div>
 
-    <div class="card metric-card">
+    <!-- Inactive Customers -->
+    <div class="metric-card">
+        <div class="metric-card-top">
+            <div class="metric-icon metric-icon-warning">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            </div>
+            <span class="metric-trend trend-down">Inactive</span>
+        </div>
+        <div class="metric-value">{{ cust_inactive }}</div>
+        <div class="metric-label">Inactive Customers</div>
+    </div>
+
+    <!-- Total Products -->
+    <div class="metric-card">
+        <div class="metric-card-top">
+            <div class="metric-icon metric-icon-accent">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                </svg>
+            </div>
+            <span class="metric-trend trend-neu">Catalog</span>
+        </div>
+        <div class="metric-value">{{ prod_total }}</div>
+        <div class="metric-label">Products in Catalog</div>
+    </div>
+
+    <!-- Out of Stock -->
+    <div class="metric-card">
+        <div class="metric-card-top">
+            <div class="metric-icon metric-icon-danger">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+            </div>
+            <span class="metric-trend trend-down">Stock Alert</span>
+        </div>
+        <div class="metric-value">{{ prod_outofstock }}</div>
+        <div class="metric-label">Out-of-Stock Products</div>
+    </div>
+
+    <!-- Total Purchases -->
+    <div class="metric-card">
+        <div class="metric-card-top">
+            <div class="metric-icon metric-icon-primary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+            </div>
+            <span class="metric-trend trend-up">Orders</span>
+        </div>
         <div class="metric-value">{{ order_count }}</div>
-        <div class="metric-label">Total Purchases</div>
+        <div class="metric-label">Total Orders Placed</div>
     </div>
 
-    <div class="card metric-card">
-        <div class="metric-value">${{ "%.2f"|format(total_sales) }}</div>
-        <div class="metric-label">Gross Revenue</div>
+    <!-- Gross Revenue -->
+    <div class="metric-card">
+        <div class="metric-card-top">
+            <div class="metric-icon metric-icon-success">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+            </div>
+            <span class="metric-trend trend-up">Revenue</span>
+        </div>
+        <div class="metric-value" style="font-size:1.4rem;">{{ total_sales | inr }}</div>
+        <div class="metric-label">Gross Revenue (₹)</div>
+    </div>
+
+    <!-- Customer Segments -->
+    <div class="metric-card">
+        <div class="metric-card-top">
+            <div class="metric-icon metric-icon-accent">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                    <polyline points="2 17 12 22 22 17"></polyline>
+                    <polyline points="2 12 12 17 22 12"></polyline>
+                </svg>
+            </div>
+            <span class="metric-trend trend-neu">K-Means</span>
+        </div>
+        <div class="metric-value">{{ cluster_count }}</div>
+        <div class="metric-label">Customer Segments</div>
     </div>
 </div>
 
-<div class="card mt-5">
-    <h3>Recent Transactions</h3>
-    {% if recent_orders %}
-    <table class="table mt-3">
-        <thead>
-            <tr>
-                <th>Order ID</th>
-                <th>Customer</th>
-                <th>Total Amount</th>
-                <th>Date</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for order in recent_orders %}
-            <tr>
-                <td>#{{ order.purchase_id }}</td>
-                <td>{{ order.customer_name }}</td>
-                <td>${{ "%.2f"|format(order.total_amount) }}</td>
-                <td>{{ order.purchase_date }}</td>
-                <td><span class="badge badge-success">{{ order.status }}</span></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p class="text-muted mt-3">No orders recorded in the database yet.</p>
-    {% endif %}
+<!-- ── Analytics Tables ────────────────────────────────────────────── -->
+<div class="dashboard-grid">
+
+    <!-- Sales by Category -->
+    <div class="card">
+        <div class="card-header">
+            <h3>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.4rem;vertical-align:-2px">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6"  y1="20" x2="6"  y2="14"></line>
+                </svg>
+                Sales by Category
+            </h3>
+        </div>
+        {% if category_sales %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Units Sold</th>
+                        <th class="text-right">Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in category_sales %}
+                    <tr>
+                        <td><span class="badge badge-category">{{ cat.category }}</span></td>
+                        <td class="text-secondary">{{ cat.total_units }}</td>
+                        <td class="fw-700 text-right">{{ cat.total_revenue | inr }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="card-body"><p class="text-muted">No sales data recorded yet.</p></div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card">
+        <div class="card-header">
+            <h3>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.4rem;vertical-align:-2px">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+                Recent Purchases
+            </h3>
+            <a href="{{ url_for('admin.purchases') }}" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        {% if recent_orders %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th class="text-right">Amount</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in recent_orders %}
+                    <tr>
+                        <td><span class="fw-700 text-primary-c">#{{ order.purchase_id }}</span></td>
+                        <td>
+                            <div class="fw-600">{{ order.customer_name }}</div>
+                            <small class="text-muted">{{ order.customer_phone }}</small>
+                        </td>
+                        <td class="fw-700 text-right">{{ order.total_amount | inr }}</td>
+                        <td><small class="text-muted">{{ order.purchase_date }}</small></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="card-body"><p class="text-muted">No purchases recorded yet.</p></div>
+        {% endif %}
+    </div>
+
 </div>
+
 {% endblock %}

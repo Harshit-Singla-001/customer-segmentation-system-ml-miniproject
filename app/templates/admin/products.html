@@ -1,74 +1,162 @@
 {% extends "base.html" %}
 
-{% block title %}Product Catalog Management — Admin Portal{% endblock %}
+{% block title %}Product Catalog Management — Admin{% endblock %}
 
 {% block content %}
+
 <div class="page-header">
-    <h2>Catalog Management</h2>
-    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline">&larr; Back to Dashboard</a>
+    <div class="page-header-left">
+        <h1>Product Catalog</h1>
+        <p>Add products, manage stock levels, pricing, and inventory status.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline btn-sm">&larr; Dashboard</a>
+    </div>
 </div>
 
-<div class="grid grid-3-1 mt-4">
+<!-- Admin Sub-Nav -->
+<div class="admin-sidebar-nav mb-3">
+    <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        Overview
+    </a>
+    <a href="{{ url_for('admin.customers') }}" class="admin-nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle>
+        </svg>
+        Customers
+    </a>
+    <a href="{{ url_for('admin.products') }}" class="admin-nav-item active">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        </svg>
+        Products
+    </a>
+    <a href="{{ url_for('admin.purchases') }}" class="admin-nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line>
+        </svg>
+        Purchases
+    </a>
+</div>
+
+<!-- Main 2-column layout -->
+<div style="display:grid; grid-template-columns: 1fr 360px; gap:1.5rem; align-items:flex-start;">
+
+    <!-- Products Table -->
     <div class="card">
-        <h3>Catalog Products</h3>
+        <div class="card-header">
+            <h3>Catalog Products ({{ products | length }})</h3>
+        </div>
         {% if products %}
-        <table class="table mt-3">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in products %}
-                <tr>
-                    <td>#{{ p.product_id }}</td>
-                    <td><strong>{{ p.name }}</strong></td>
-                    <td><span class="badge badge-info">{{ p.category }}</span></td>
-                    <td>${{ "%.2f"|format(p.price) }}</td>
-                    <td>{{ p.stock_quantity }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in products %}
+                    <tr>
+                        <td><span class="text-muted font-mono">#{{ p.product_id }}</span></td>
+                        <td>
+                            <div class="fw-600">{{ p.name }}</div>
+                            {% if p.description %}
+                                <small class="text-muted">{{ p.description[:50] }}{% if p.description | length > 50 %}…{% endif %}</small>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge badge-category">{{ p.category }}</span></td>
+                        <td class="fw-700">{{ p.price | inr }}</td>
+                        <td>
+                            <span class="fw-600 {% if p.stock_quantity <= 5 %}text-danger{% elif p.stock_quantity <= 20 %}text-warning{% else %}text-success{% endif %}">
+                                {{ p.stock_quantity }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if p.status == 'Out of Stock' or p.stock_quantity <= 0 %}
+                                <span class="badge badge-stock-out">Out of Stock</span>
+                            {% else %}
+                                <span class="badge badge-stock-ok">Active</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form action="{{ url_for('admin.delete_product', product_id=p.product_id) }}" method="POST"
+                                  onsubmit="return confirm('Delete product {{ p.name }}?');" style="display:inline;">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% else %}
-        <p class="text-muted mt-3">No products available in catalog.</p>
+            <div class="card-body">
+                <p class="text-muted text-center">No products found in catalog.</p>
+            </div>
         {% endif %}
     </div>
 
-    <div class="card form-card">
-        <h3>Add New Product</h3>
-        <form action="{{ url_for('admin.products') }}" method="POST" class="mt-3">
-            <div class="form-group">
-                <label for="name">Product Name *</label>
-                <input type="text" id="name" name="name" required class="form-control">
-            </div>
+    <!-- Add Product Form -->
+    <div class="card">
+        <div class="card-header">
+            <h3>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.3rem;vertical-align:-2px">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Add New Product
+            </h3>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('admin.products') }}" method="POST">
+                <div class="form-group">
+                    <label class="form-label" for="prod-name">Product Name <span class="required">*</span></label>
+                    <input type="text" id="prod-name" name="name" required class="form-control" placeholder="e.g. Smart Watch">
+                </div>
 
-            <div class="form-group">
-                <label for="category">Category *</label>
-                <input type="text" id="category" name="category" required class="form-control" placeholder="Electronics, Furniture...">
-            </div>
+                <div class="form-group">
+                    <label class="form-label" for="prod-category">Category <span class="required">*</span></label>
+                    <input type="text" id="prod-category" name="category" required class="form-control" placeholder="Electronics, Fashion…">
+                </div>
 
-            <div class="form-group">
-                <label for="price">Price ($) *</label>
-                <input type="number" id="price" name="price" step="0.01" min="0" required class="form-control">
-            </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="prod-price">Price (₹) <span class="required">*</span></label>
+                        <input type="number" id="prod-price" name="price" step="0.01" min="0" required class="form-control" placeholder="4500.00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="prod-stock">Stock Qty <span class="required">*</span></label>
+                        <input type="number" id="prod-stock" name="stock" min="0" required class="form-control" placeholder="50">
+                    </div>
+                </div>
 
-            <div class="form-group">
-                <label for="stock">Stock Quantity *</label>
-                <input type="number" id="stock" name="stock" min="0" required class="form-control">
-            </div>
+                <div class="form-group">
+                    <label class="form-label" for="prod-desc">Description</label>
+                    <textarea id="prod-desc" name="description" class="form-control" rows="3" placeholder="Brief product description…"></textarea>
+                </div>
 
-            <div class="form-group">
-                <label for="description">Description</label>
-                <textarea id="description" name="description" class="form-control" rows="3"></textarea>
-            </div>
-
-            <button type="submit" class="btn btn-primary btn-block">Add Product</button>
-        </form>
+                <button type="submit" class="btn btn-primary btn-full" id="add-product-btn">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Add Product to Catalog
+                </button>
+            </form>
+        </div>
     </div>
 </div>
+
 {% endblock %}

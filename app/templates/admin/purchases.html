@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Purchases & Transactions — Admin Portal{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Purchases & Transactions</h1>
+        <p>Complete master order register — all customer purchases stored in MySQL.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline btn-sm">&larr; Dashboard</a>
+    </div>
+</div>
+
+<!-- Admin Sub-Nav -->
+<div class="admin-sidebar-nav mb-3">
+    <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        Overview
+    </a>
+    <a href="{{ url_for('admin.customers') }}" class="admin-nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle>
+        </svg>
+        Customers
+    </a>
+    <a href="{{ url_for('admin.products') }}" class="admin-nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        </svg>
+        Products
+    </a>
+    <a href="{{ url_for('admin.purchases') }}" class="admin-nav-item active">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line>
+        </svg>
+        Purchases
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3>All Transactions ({{ purchases | length }})</h3>
+    </div>
+    {% if purchases %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Mobile</th>
+                    <th>Items</th>
+                    <th class="text-right">Amount</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in purchases %}
+                <tr>
+                    <td><span class="fw-700 text-primary-c">#{{ p.purchase_id }}</span></td>
+                    <td class="fw-600">{{ p.customer_name }}</td>
+                    <td><span class="text-muted">{{ p.customer_phone }}</span></td>
+                    <td><span class="badge badge-category">{{ p.total_items }} item{{ 's' if p.total_items != 1 else '' }}</span></td>
+                    <td class="fw-700 text-right">{{ p.total_amount | inr }}</td>
+                    <td><small class="text-muted">{{ p.purchase_date }}</small></td>
+                    <td><span class="badge badge-stock-ok">{{ p.status }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="card-body">
+            <p class="text-muted text-center">No purchase transactions found in database.</p>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

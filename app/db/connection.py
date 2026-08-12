@@ -3,20 +3,30 @@ import pymysql
 from pymysql.cursors import DictCursor
 from config import Config
 
+_CACHED_RESOLVED_HOSTS = {}
+
 def resolve_host(hostname):
+    if not hostname or hostname in ('localhost', '127.0.0.1'):
+        return hostname
+    if hostname in _CACHED_RESOLVED_HOSTS:
+        return _CACHED_RESOLVED_HOSTS[hostname]
+
     import socket
     try:
-        return socket.gethostbyname(hostname)
+        ip = socket.gethostbyname(hostname)
+        _CACHED_RESOLVED_HOSTS[hostname] = ip
+        return ip
     except socket.gaierror:
-        # Fallback resolution via Google Public DNS or known host IPs if Windows DNS cache is lagging
         import subprocess, re
         try:
             cmd_out = subprocess.check_output(f"nslookup {hostname} 8.8.8.8", shell=True, text=True, stderr=subprocess.DEVNULL)
             ips = re.findall(r"Addresses?:\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)", cmd_out)
             if ips:
+                _CACHED_RESOLVED_HOSTS[hostname] = ips[0]
                 return ips[0]
         except Exception:
             pass
+        _CACHED_RESOLVED_HOSTS[hostname] = hostname
         return hostname
 
 def get_db_connection(with_database=True):

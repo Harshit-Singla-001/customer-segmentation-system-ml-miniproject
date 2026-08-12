@@ -21,7 +21,7 @@
         <h3 class="product-title">{{ product.name }}</h3>
         <p class="product-desc">{{ product.description }}</p>
         <div class="product-footer">
-            <span class="product-price">${{ "%.2f"|format(product.price) }}</span>
+            <span class="product-price">{{ product.price | inr }}</span>
             <form action="{{ url_for('customer.add_to_cart') }}" method="POST" class="add-cart-form">
                 <input type="hidden" name="product_id" value="{{ product.product_id }}">
                 <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity }}" class="qty-input">
