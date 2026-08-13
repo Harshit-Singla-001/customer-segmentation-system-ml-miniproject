@@ -11,8 +11,10 @@ The **Customer Segmentation System** demonstrates how customer details, purchasi
 ### Key Capabilities
 - **Synthetic Dataset Generator**: Create realistic, seedable, normalized datasets with hidden customer behavior profiles (`scripts/generate_dataset.py`).
 - **Direct Database Importer**: High-performance bulk import of CSV records into online MySQL (`scripts/import_to_db.py`).
-- **Customer Shopping Portal**: Browse products, view stock availability, manage cart, and place orders.
-- **Admin Management Panel**: Manage products, customers, transactions, dataset imports, and run clustering algorithms.
+- **Phone-First Customer Verification**: Instant 10-digit mobile lookup (`/customer/check-customer?phone=...`) for 1-click checkout or dynamic new customer registration.
+- **Demographic Segmentation**: Captures `age` and `gender` alongside `income` and purchase metrics for multi-dimensional K-Means clustering.
+- **Dynamic Device Timezone Engine**: Dynamically inspects the host device system clock and converts transaction timestamps to Indian Standard Time (IST — Asia/Kolkata / UTC+5:30).
+- **Admin Management Panel**: Single-screen optimized dashboards for managing catalog items, customers (with direct Delete actions), transactions, imports, and analytical segment visualization.
 - **K-Means Analytics**: Standardize numerical customer metrics (spending, frequency, income, age) and analyze discovered customer segments.
 
 ---
@@ -36,6 +38,7 @@ To access the Administrator Dashboard, navigate to `http://127.0.0.1:5000/admin/
 - **Database**: MySQL 8.x (Cloud MySQL on Aiven / Local MySQL)
 - **Machine Learning & Analytics**: Pandas, NumPy, Scikit-Learn, Faker
 - **Frontend**: HTML5, Vanilla CSS3, JavaScript (ES6+), Chart.js
+- **Timezone Engine**: Dynamic device system clock inspection with IST (`Asia/Kolkata`) calculation
 
 ---
 
@@ -121,7 +124,7 @@ Open **[http://127.0.0.1:5000](http://127.0.0.1:5000)** in your browser.
 
 ## 📊 Database Entities & Schema
 
-- **`customers`**: Customer demographics (`customer_id`, `name`, `email`, `phone`, `income`, `age`, `gender`, `city`, `status`, `created_at`)
+- **`customers`**: Customer demographics (`customer_id`, `name`, `email`, `phone`, `income`, `age`, `gender`, `city`, `created_at`)
 - **`products`**: Item catalog (`product_id`, `name`, `category`, `price`, `stock_quantity`, `status`, `description`)
 - **`purchases`**: Transaction records (`purchase_id`, `customer_id`, `total_amount`, `status`, `purchase_date`)
 - **`purchase_items`**: Itemized order lines (`item_id`, `purchase_id`, `product_id`, `quantity`, `unit_price`, `subtotal`)

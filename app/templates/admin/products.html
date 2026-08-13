@@ -1,16 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Product Catalog Management — Admin{% endblock %}
+{% block title %}Product Catalog — Admin Portal{% endblock %}
 
 {% block content %}
 
 <div class="page-header">
     <div class="page-header-left">
-        <h1>Product Catalog</h1>
-        <p>Add products, manage stock levels, pricing, and inventory status.</p>
-    </div>
-    <div class="page-actions">
-        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline btn-sm">&larr; Dashboard</a>
+        <h1 class="d-flex align-center gap-2">
+            <div class="header-title-badge">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                </svg>
+            </div>
+            Product Catalog Management
+        </h1>
+        <p>Manage store inventory, update product prices, and track stock levels in MySQL.</p>
     </div>
 </div>
 
@@ -38,19 +42,44 @@
     <a href="{{ url_for('admin.purchases') }}" class="admin-nav-item">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line>
         </svg>
         Purchases
     </a>
 </div>
 
-<!-- Main 2-column layout -->
-<div style="display:grid; grid-template-columns: 1fr 360px; gap:1.5rem; align-items:flex-start;">
+<!-- Dynamic Layout Container (Full Width by default, switches to split grid when Add New Product is clicked) -->
+<div id="products-layout-container" class="products-layout-full">
 
     <!-- Products Table -->
-    <div class="card">
-        <div class="card-header">
+    <div class="card" id="products-table-card">
+        <div class="card-header d-flex align-center justify-between" style="flex-wrap:wrap; gap:0.75rem;">
             <h3>Catalog Products ({{ products | length }})</h3>
+            
+            <div class="d-flex align-center gap-2">
+                <form method="GET" action="{{ url_for('admin.products') }}" class="d-flex align-center gap-1 mb-0">
+                    <label for="sort_by_prod" class="text-muted" style="font-size:0.8rem; font-weight:600; white-space:nowrap;">Sort by:</label>
+                    <select name="sort_by" id="sort_by_prod" class="form-control" style="font-size:0.8rem; padding:0.35rem 0.7rem; width:auto;" onchange="this.form.submit()">
+                        <option value="id_asc" {% if sort_by == 'id_asc' %}selected{% endif %}>ID: Increasing (#1 → #N)</option>
+                        <option value="id_desc" {% if sort_by == 'id_desc' %}selected{% endif %}>ID: Decreasing (#N → #1)</option>
+                        <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Name (A → Z)</option>
+                        <option value="category_asc" {% if sort_by == 'category_asc' %}selected{% endif %}>Category</option>
+                        <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+                        <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+                    </select>
+                </form>
+
+                <button id="toggle-add-btn" type="button" class="btn btn-primary btn-sm d-flex align-center gap-1" onclick="toggleAddProductForm()">
+                    <svg id="toggle-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    <span id="toggle-btn-label">Add New Product</span>
+                </button>
+            </div>
         </div>
+
         {% if products %}
         <div class="table-wrap">
             <table class="table">
@@ -62,7 +91,7 @@
                         <th>Price</th>
                         <th>Stock</th>
                         <th>Status</th>
-                        <th>Action</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -75,25 +104,47 @@
                                 <small class="text-muted">{{ p.description[:50] }}{% if p.description | length > 50 %}…{% endif %}</small>
                             {% endif %}
                         </td>
-                        <td><span class="badge badge-category">{{ p.category }}</span></td>
-                        <td class="fw-700">{{ p.price | inr }}</td>
+                        <td><span class="badge badge-category">{{ p.category or 'General' }}</span></td>
+                        <td class="fw-700 text-primary-c">{{ p.price | inr }}</td>
                         <td>
-                            <span class="fw-600 {% if p.stock_quantity <= 5 %}text-danger{% elif p.stock_quantity <= 20 %}text-warning{% else %}text-success{% endif %}">
-                                {{ p.stock_quantity }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if p.status == 'Out of Stock' or p.stock_quantity <= 0 %}
-                                <span class="badge badge-stock-out">Out of Stock</span>
+                            {% if p.stock_quantity <= 0 %}
+                                <span class="badge badge-stock-out">0</span>
+                            {% elif p.stock_quantity < 10 %}
+                                <span class="badge badge-stock-low">{{ p.stock_quantity }}</span>
                             {% else %}
-                                <span class="badge badge-stock-ok">Active</span>
+                                <span class="badge badge-stock-ok">{{ p.stock_quantity }}</span>
                             {% endif %}
                         </td>
                         <td>
-                            <form action="{{ url_for('admin.delete_product', product_id=p.product_id) }}" method="POST"
-                                  onsubmit="return confirm('Delete product {{ p.name }}?');" style="display:inline;">
-                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                            </form>
+                            {% if p.status == 'Active' %}
+                                <span class="badge badge-stock-ok">In Stock</span>
+                            {% else %}
+                                <span class="badge badge-stock-out">Out of Stock</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-center gap-1">
+                                <!-- Edit Button opens HTML5 Modal -->
+                                <button type="button"
+                                        class="btn btn-outline btn-xs btn-edit-prod"
+                                        data-id="{{ p.product_id }}"
+                                        data-name="{{ p.name }}"
+                                        data-category="{{ p.category or '' }}"
+                                        data-price="{{ p.price }}"
+                                        data-stock="{{ p.stock_quantity }}"
+                                        data-description="{{ p.description or '' }}"
+                                        onclick="handleEditBtnClick(this)">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Edit
+                                </button>
+                                
+                                <form action="{{ url_for('admin.delete_product', product_id=p.product_id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete product #{{ p.product_id }} ({{ p.name }})?');">
+                                    <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -101,50 +152,49 @@
             </table>
         </div>
         {% else %}
-            <div class="card-body">
-                <p class="text-muted text-center">No products found in catalog.</p>
-            </div>
+            <div class="card-body"><p class="text-muted">No products found in the database.</p></div>
         {% endif %}
     </div>
 
-    <!-- Add Product Form -->
-    <div class="card">
-        <div class="card-header">
-            <h3>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.3rem;vertical-align:-2px">
+    <!-- Add Product Form Sidebar Card (Hidden by default until Add New Product button is clicked) -->
+    <div class="card" id="add-product-card" style="display: none;">
+        <div class="card-header d-flex align-center justify-between">
+            <h3 class="d-flex align-center gap-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="16"></line>
                     <line x1="8" y1="12" x2="16" y2="12"></line>
                 </svg>
                 Add New Product
             </h3>
+            <button type="button" class="modal-close-btn" onclick="toggleAddProductForm()" title="Close Form">&times;</button>
         </div>
         <div class="card-body">
-            <form action="{{ url_for('admin.products') }}" method="POST">
+            <form action="{{ url_for('admin.products') }}" method="POST" id="add-product-form">
                 <div class="form-group">
                     <label class="form-label" for="prod-name">Product Name <span class="required">*</span></label>
-                    <input type="text" id="prod-name" name="name" required class="form-control" placeholder="e.g. Smart Watch">
+                    <input type="text" id="prod-name" name="name" minlength="2" maxlength="100" required class="form-control" placeholder="e.g. Wireless Noise-Canceling Headphones">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="prod-category">Category <span class="required">*</span></label>
-                    <input type="text" id="prod-category" name="category" required class="form-control" placeholder="Electronics, Fashion…">
+                    <input type="text" id="prod-category" name="category" minlength="2" maxlength="50" required class="form-control" placeholder="Electronics, Fashion…">
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label" for="prod-price">Price (₹) <span class="required">*</span></label>
-                        <input type="number" id="prod-price" name="price" step="0.01" min="0" required class="form-control" placeholder="4500.00">
+                        <input type="number" id="prod-price" name="price" step="1" min="1" max="10000000" required class="form-control" placeholder="4500">
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="prod-stock">Stock Qty <span class="required">*</span></label>
-                        <input type="number" id="prod-stock" name="stock" min="0" required class="form-control" placeholder="50">
+                        <input type="number" id="prod-stock" name="stock" min="0" max="100000" required class="form-control" placeholder="50">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="prod-desc">Description</label>
-                    <textarea id="prod-desc" name="description" class="form-control" rows="3" placeholder="Brief product description…"></textarea>
+                    <textarea id="prod-desc" name="description" maxlength="500" class="form-control" rows="3" placeholder="Brief product description…"></textarea>
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-full" id="add-product-btn">
@@ -152,11 +202,187 @@
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    Add Product to Catalog
+                    + Add Product to Catalog
                 </button>
+            </form>
+        </div>
+    </div>
+
+</div><!-- end container -->
+
+
+<!-- ── Edit Product Modal ──────────────────────────────────────────────── -->
+<div id="editProductModal" class="modal-backdrop" style="display:none;" onclick="closeEditModalOnBackdrop(event)">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+        <div class="modal-header">
+            <h3 id="edit-modal-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px; margin-right:6px;">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Edit Product
+            </h3>
+            <button type="button" class="modal-close-btn" onclick="closeEditModal()" aria-label="Close">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <form id="editProductForm" method="POST" action="">
+                <input type="hidden" id="edit-product-id" name="_product_id" value="">
+
+                <div class="form-group">
+                    <label class="form-label" for="edit-name">Product Name <span class="required">*</span></label>
+                    <input type="text" id="edit-name" name="name" minlength="2" maxlength="100" required class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="edit-category">Category <span class="required">*</span></label>
+                    <input type="text" id="edit-category" name="category" minlength="2" maxlength="50" required class="form-control">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="edit-price">Price (₹) <span class="required">*</span></label>
+                        <input type="number" id="edit-price" name="price" step="1" min="1" max="10000000" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="edit-stock">Stock Qty <span class="required">*</span></label>
+                        <input type="number" id="edit-stock" name="stock" min="0" max="100000" required class="form-control">
+                    </div>
+                </div>
+
+                <!-- Live status preview based on stock input -->
+                <div class="form-group">
+                    <label class="form-label">Stock Status Preview</label>
+                    <div id="edit-status-preview" class="status-preview">
+                        <span id="edit-status-badge" class="badge badge-stock-ok">In Stock</span>
+                        <span id="edit-status-text" class="text-muted" style="font-size:0.8rem; margin-left:0.5rem;">Will be available for purchase</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="edit-description">Description</label>
+                    <textarea id="edit-description" name="description" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="modal-footer-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="edit-save-btn">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Save Changes
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/**
+ * Dynamic Add Product Form Toggle & Edit Modal
+ */
+function toggleAddProductForm(forceOpen = false) {
+    const container = document.getElementById('products-layout-container');
+    const card = document.getElementById('add-product-card');
+    const label = document.getElementById('toggle-btn-label');
+    const btn = document.getElementById('toggle-add-btn');
+
+    const isOpen = (card.style.display !== 'none');
+
+    if (isOpen && !forceOpen) {
+        container.className = 'products-layout-full';
+        card.style.display = 'none';
+        label.textContent = 'Add New Product';
+        btn.className = 'btn btn-primary btn-sm d-flex align-center gap-1';
+    } else {
+        container.className = 'products-layout-split';
+        card.style.display = 'block';
+        label.textContent = 'Close Form';
+        btn.className = 'btn btn-outline btn-sm d-flex align-center gap-1';
+        setTimeout(() => {
+            const input = document.getElementById('prod-name');
+            if (input) input.focus();
+        }, 100);
+    }
+}
+
+function handleEditBtnClick(btn) {
+    const ds = btn.dataset;
+    openEditModal(
+        ds.id,
+        ds.name,
+        ds.category,
+        parseFloat(ds.price) || 0,
+        parseInt(ds.stock, 10) || 0,
+        ds.description
+    );
+}
+
+function openEditModal(id, name, category, price, stock, description) {
+    const modal = document.getElementById('editProductModal');
+    const form  = document.getElementById('editProductForm');
+
+    form.action = '/admin/products/edit/' + id;
+
+    document.getElementById('edit-product-id').value  = id;
+    document.getElementById('edit-name').value         = name;
+    document.getElementById('edit-category').value     = category;
+    document.getElementById('edit-price').value        = price;
+    document.getElementById('edit-stock').value        = stock;
+    document.getElementById('edit-description').value  = description;
+
+    updateStatusPreview(stock);
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    setTimeout(() => document.getElementById('edit-name').focus(), 80);
+}
+
+function closeEditModal() {
+    document.getElementById('editProductModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function closeEditModalOnBackdrop(e) {
+    if (e.target === document.getElementById('editProductModal')) {
+        closeEditModal();
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeEditModal();
+});
+
+function updateStatusPreview(stockVal) {
+    const badge = document.getElementById('edit-status-badge');
+    const text  = document.getElementById('edit-status-text');
+    const qty   = parseInt(stockVal, 10);
+
+    if (isNaN(qty) || qty <= 0) {
+        badge.className = 'badge badge-stock-out';
+        badge.textContent = 'Out of Stock';
+        text.textContent = 'Product will NOT be available for purchase';
+        text.style.color = 'var(--danger)';
+    } else {
+        badge.className = 'badge badge-stock-ok';
+        badge.textContent = 'In Stock';
+        text.textContent = 'Product will be available for purchase (' + qty + ' units)';
+        text.style.color = 'var(--success)';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const stockInput = document.getElementById('edit-stock');
+    if (stockInput) {
+        stockInput.addEventListener('input', function() {
+            updateStatusPreview(this.value);
+        });
+    }
+});
+</script>
 {% endblock %}

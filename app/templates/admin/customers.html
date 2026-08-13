@@ -6,11 +6,15 @@
 
 <div class="page-header">
     <div class="page-header-left">
-        <h1>Customer Directory</h1>
+        <h1 class="d-flex align-center gap-2">
+            <div class="header-title-badge">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle>
+                </svg>
+            </div>
+            Customer Directory
+        </h1>
         <p>Manage all registered customers — view orders, income, and segmentation status.</p>
-    </div>
-    <div class="page-actions">
-        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline btn-sm">&larr; Dashboard</a>
     </div>
 </div>
 
@@ -53,24 +57,113 @@
     </a>
 </div>
 
+<!-- Sort Controls -->
+<div class="card mb-3">
+    <div class="card-body" style="padding: 0.85rem 1.25rem;">
+        <form method="GET" action="{{ url_for('admin.customers') }}" class="sort-form">
+            <div class="d-flex align-center gap-2" style="flex-wrap:wrap;">
+                <span class="fw-600" style="white-space:nowrap; color:var(--text-2); font-size:0.85rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px; margin-right:4px;">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    Sort by:
+                </span>
+                <select name="sort_by" id="sort-by-select" class="form-control sort-select">
+                    <option value="customer_id" {% if sort_by == 'customer_id' %}selected{% endif %}>Customer ID</option>
+                    <option value="name"        {% if sort_by == 'name'        %}selected{% endif %}>Customer Name</option>
+                    <option value="age"         {% if sort_by == 'age'         %}selected{% endif %}>Age</option>
+                    <option value="income"      {% if sort_by == 'income'      %}selected{% endif %}>Annual Income</option>
+                    <option value="total_spent" {% if sort_by == 'total_spent' %}selected{% endif %}>Total Spending</option>
+                    <option value="order_count" {% if sort_by == 'order_count' %}selected{% endif %}>Purchase Count</option>
+                    <option value="segment"     {% if sort_by == 'segment'     %}selected{% endif %}>Segment</option>
+                </select>
+
+                <select name="sort_dir" id="sort-dir-select" class="form-control sort-select">
+                    {% if sort_by == 'name' %}
+                        <option value="asc"  {% if sort_dir == 'asc'  %}selected{% endif %}>A → Z</option>
+                        <option value="desc" {% if sort_dir == 'desc' %}selected{% endif %}>Z → A</option>
+                    {% elif sort_by == 'age' %}
+                        <option value="asc"  {% if sort_dir == 'asc'  %}selected{% endif %}>Young → Old</option>
+                        <option value="desc" {% if sort_dir == 'desc' %}selected{% endif %}>Old → Young</option>
+                    {% else %}
+                        <option value="asc"  {% if sort_dir == 'asc'  %}selected{% endif %}>Low → High</option>
+                        <option value="desc" {% if sort_dir == 'desc' %}selected{% endif %}>High → Low</option>
+                    {% endif %}
+                </select>
+
+                <button type="submit" class="btn btn-primary btn-sm">Apply Sort</button>
+
+                <a href="{{ url_for('admin.customers') }}" class="btn btn-outline btn-sm">Reset</a>
+
+                <span class="text-muted" style="font-size:0.82rem; margin-left:auto;">
+                    Total {{ total_customers }} customer{{ 's' if total_customers != 1 else '' }}
+                </span>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Customer Table (Single Screen Optimized Fit) -->
 <div class="card">
-    <div class="card-header">
-        <h3>All Customers ({{ customers | length }})</h3>
+    <div class="card-header d-flex align-center justify-between" style="padding: 1rem 1.25rem;">
+        <h3>
+            All Customers ({% if total_customers > 100 %}Showing {{ customers | length }} of {{ total_customers }}{% else %}{{ total_customers }}{% endif %})
+        </h3>
+        <span class="text-muted" style="font-size:0.82rem;">
+            Sorted by <strong>{{ sort_by | replace('_', ' ') | title }}</strong>
+            ({{ 'Ascending' if sort_dir == 'asc' else 'Descending' }})
+            {% if total_pages > 1 %} · Page {{ page }} of {{ total_pages }}{% endif %}
+        </span>
     </div>
     {% if customers %}
     <div class="table-wrap">
-        <table class="table">
+        <table class="table table-compact">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Customer</th>
+                    <th>
+                        <a href="{{ url_for('admin.customers', sort_by='customer_id', sort_dir='asc' if (sort_by != 'customer_id' or sort_dir == 'desc') else 'desc', page=page) }}"
+                           class="sort-header {% if sort_by == 'customer_id' %}sort-active{% endif %}">
+                            ID {% if sort_by == 'customer_id' %}{{ '↑' if sort_dir == 'asc' else '↓' }}{% else %}↕{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ url_for('admin.customers', sort_by='name', sort_dir='asc' if (sort_by != 'name' or sort_dir == 'desc') else 'desc', page=page) }}"
+                           class="sort-header {% if sort_by == 'name' %}sort-active{% endif %}">
+                            Customer {% if sort_by == 'name' %}{{ '↑' if sort_dir == 'asc' else '↓' }}{% else %}↕{% endif %}
+                        </a>
+                    </th>
                     <th>Contact</th>
                     <th>City</th>
-                    <th>Annual Income</th>
-                    <th>Orders</th>
-                    <th>Total Spent</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th>
+                        <a href="{{ url_for('admin.customers', sort_by='income', sort_dir='asc' if (sort_by != 'income' or sort_dir == 'desc') else 'desc', page=page) }}"
+                           class="sort-header {% if sort_by == 'income' %}sort-active{% endif %}">
+                            Annual Income {% if sort_by == 'income' %}{{ '↑' if sort_dir == 'asc' else '↓' }}{% else %}↕{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ url_for('admin.customers', sort_by='order_count', sort_dir='asc' if (sort_by != 'order_count' or sort_dir == 'desc') else 'desc', page=page) }}"
+                           class="sort-header {% if sort_by == 'order_count' %}sort-active{% endif %}">
+                            Orders {% if sort_by == 'order_count' %}{{ '↑' if sort_dir == 'asc' else '↓' }}{% else %}↕{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ url_for('admin.customers', sort_by='total_spent', sort_dir='asc' if (sort_by != 'total_spent' or sort_dir == 'desc') else 'desc', page=page) }}"
+                           class="sort-header {% if sort_by == 'total_spent' %}sort-active{% endif %}">
+                            Total Spent {% if sort_by == 'total_spent' %}{{ '↑' if sort_dir == 'asc' else '↓' }}{% else %}↕{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ url_for('admin.customers', sort_by='segment', sort_dir='asc' if (sort_by != 'segment' or sort_dir == 'desc') else 'desc', page=page) }}"
+                           class="sort-header {% if sort_by == 'segment' %}sort-active{% endif %}">
+                            Segment {% if sort_by == 'segment' %}{{ '↑' if sort_dir == 'asc' else '↓' }}{% else %}↕{% endif %}
+                        </a>
+                    </th>
+                    <th class="text-right">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -78,34 +171,33 @@
                 <tr>
                     <td><span class="text-muted font-mono">#{{ c.customer_id }}</span></td>
                     <td>
-                        <div class="fw-600">{{ c.name }}</div>
-                        <small class="text-muted">Age: {{ c.age or '—' }} · {{ c.gender or '—' }}</small>
+                        <div class="fw-600 text-no-wrap">{{ c.name }}</div>
+                        <small class="text-muted text-no-wrap">Age: {{ c.age or '—' }} · {{ c.gender or '—' }}</small>
                     </td>
                     <td>
-                        <div>{{ c.phone }}</div>
-                        <small class="text-muted">{{ c.email }}</small>
-                    </td>
-                    <td>{{ c.city or '—' }}</td>
-                    <td>{% if c.income %}{{ c.income | inr }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                    <td><span class="badge badge-category">{{ c.order_count }}</span></td>
-                    <td class="fw-700">{{ c.total_spent | inr }}</td>
-                    <td>
-                        {% if c.status == 'Inactive' %}
-                            <span class="badge badge-stock-out">Inactive</span>
-                        {% else %}
-                            <span class="badge badge-stock-ok">Active</span>
+                        <div class="font-mono fw-500" style="font-size:0.8rem;">{{ c.phone }}</div>
+                        {% if c.email %}
+                            <small class="text-muted text-truncate-email" title="{{ c.email }}">{{ c.email }}</small>
                         {% endif %}
                     </td>
+                    <td class="text-no-wrap">{{ c.city or '—' }}</td>
+                    <td class="text-no-wrap font-mono">{% if c.income %}{{ c.income | inr }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    <td class="text-center"><span class="badge badge-category">{{ c.order_count }}</span></td>
+                    <td class="fw-700 text-no-wrap font-mono">{{ c.total_spent | inr }}</td>
                     <td>
-                        <div class="d-flex gap-1 align-center">
-                            <form action="{{ url_for('admin.toggle_customer_status', customer_id=c.customer_id) }}" method="POST" style="display:inline;">
-                                <button type="submit" class="btn btn-outline btn-sm">
-                                    {% if c.status == 'Inactive' %}Activate{% else %}Deactivate{% endif %}
-                                </button>
-                            </form>
-                            <form action="{{ url_for('admin.delete_customer', customer_id=c.customer_id) }}" method="POST" style="display:inline;"
+                        {% if c.cluster_label is not none and c.cluster_label != '' %}
+                            <span class="badge badge-category">
+                                {% if c.cluster_name %}{{ c.cluster_name }}{% else %}Segment {{ c.cluster_label }}{% endif %}
+                            </span>
+                        {% else %}
+                            <span class="text-muted" style="font-size:0.8rem;">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right">
+                        <div class="d-flex gap-1 align-center justify-end">
+                            <form action="{{ url_for('admin.delete_customer', customer_id=c.customer_id, page=page, sort_by=sort_by, sort_dir=sort_dir) }}" method="POST" style="display:inline;"
                                   onsubmit="return confirm('Permanently delete customer {{ c.name }}?');">
-                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                <button type="submit" class="btn btn-danger btn-xs">Delete</button>
                             </form>
                         </div>
                     </td>
@@ -114,6 +206,31 @@
             </tbody>
         </table>
     </div>
+
+    {% if total_pages > 1 %}
+    <!-- Pagination Footer -->
+    <div class="card-body pagination-wrap" style="padding: 0.85rem 1.25rem;">
+        <div class="pagination-info">
+            Showing {{ ((page - 1) * per_page) + 1 }}–{% if page * per_page < total_customers %}{{ page * per_page }}{% else %}{{ total_customers }}{% endif %} of {{ total_customers }} customers
+        </div>
+        <div class="pagination-controls">
+            {% if page > 1 %}
+                <a href="{{ url_for('admin.customers', page=page-1, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline btn-sm">&laquo; Prev</a>
+            {% else %}
+                <button class="btn btn-outline btn-sm btn-disabled" disabled>&laquo; Prev</button>
+            {% endif %}
+
+            <span class="pagination-current">Page {{ page }} of {{ total_pages }}</span>
+
+            {% if page < total_pages %}
+                <a href="{{ url_for('admin.customers', page=page+1, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline btn-sm">Next &raquo;</a>
+            {% else %}
+                <button class="btn btn-outline btn-sm btn-disabled" disabled>Next &raquo;</button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
     {% else %}
         <div class="card-body">
             <p class="text-muted text-center">No customers found in database.</p>

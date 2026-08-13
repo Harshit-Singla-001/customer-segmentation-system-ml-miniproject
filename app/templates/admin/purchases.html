@@ -6,11 +6,17 @@
 
 <div class="page-header">
     <div class="page-header-left">
-        <h1>Purchases & Transactions</h1>
+        <h1 class="d-flex align-center gap-2">
+            <div class="header-title-badge">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                    <polyline points="2 17 12 22 22 17"></polyline>
+                    <polyline points="2 12 12 17 22 12"></polyline>
+                </svg>
+            </div>
+            Purchases &amp; Transactions
+        </h1>
         <p>Complete master order register — all customer purchases stored in MySQL.</p>
-    </div>
-    <div class="page-actions">
-        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline btn-sm">&larr; Dashboard</a>
     </div>
 </div>
 
@@ -44,9 +50,63 @@
     </a>
 </div>
 
-<div class="card">
+<!-- ── Search & Filter Section ─────────────────────────────────────────── -->
+<div class="card mb-3">
     <div class="card-header">
-        <h3>All Transactions ({{ purchases | length }})</h3>
+        <h3>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.3rem;vertical-align:-2px">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            Search &amp; Filter Purchases
+        </h3>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin.purchases') }}" class="purchase-search-form">
+            <div class="purchase-search-grid" style="grid-template-columns: repeat(5, 1fr);">
+                <div class="form-group mb-0">
+                    <label class="form-label" for="q_id">Order ID</label>
+                    <input type="text" id="q_id" name="q_id" class="form-control" placeholder="e.g. 102" value="{{ q_id }}">
+                </div>
+                <div class="form-group mb-0">
+                    <label class="form-label" for="q_name">Customer Name</label>
+                    <input type="text" id="q_name" name="q_name" class="form-control" placeholder="e.g. Rahul Kumar" value="{{ q_name }}">
+                </div>
+                <div class="form-group mb-0">
+                    <label class="form-label" for="q_phone">Customer Mobile</label>
+                    <input type="text" id="q_phone" name="q_phone" class="form-control" placeholder="e.g. 9876543210" value="{{ q_phone }}">
+                </div>
+                <div class="form-group mb-0">
+                    <label class="form-label" for="q_date">Purchase Date</label>
+                    <input type="date" id="q_date" name="q_date" class="form-control" value="{{ q_date }}">
+                </div>
+                <div class="form-group mb-0">
+                    <label class="form-label" for="sort_by">Sort Order</label>
+                    <select id="sort_by" name="sort_by" class="form-control">
+                        <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest First</option>
+                        <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest First (#1)</option>
+                        <option value="highest" {% if sort_by == 'highest' %}selected{% endif %}>Highest Amount Spent</option>
+                        <option value="lowest" {% if sort_by == 'lowest' %}selected{% endif %}>Lowest Amount Spent</option>
+                    </select>
+                </div>
+            </div>
+            <div class="d-flex align-center gap-2 mt-3">
+                <button type="submit" class="btn btn-primary btn-sm">Search &amp; Sort Purchases</button>
+                {% if q_id or q_name or q_phone or q_date or sort_by != 'newest' %}
+                    <a href="{{ url_for('admin.purchases') }}" class="btn btn-outline btn-sm">Reset Filters</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Transactions Table ──────────────────────────────────────────────── -->
+<div class="card">
+    <div class="card-header d-flex align-center justify-between">
+        <h3>Transactions ({% if total_purchases > 100 %}Showing {{ purchases | length }} of {{ total_purchases }}{% else %}{{ total_purchases }}{% endif %})</h3>
+        {% if total_pages > 1 %}
+            <span class="text-muted" style="font-size:0.85rem;">Page {{ page }} of {{ total_pages }}</span>
+        {% endif %}
     </div>
     {% if purchases %}
     <div class="table-wrap">
@@ -70,16 +130,41 @@
                     <td><span class="text-muted">{{ p.customer_phone }}</span></td>
                     <td><span class="badge badge-category">{{ p.total_items }} item{{ 's' if p.total_items != 1 else '' }}</span></td>
                     <td class="fw-700 text-right">{{ p.total_amount | inr }}</td>
-                    <td><small class="text-muted">{{ p.purchase_date }}</small></td>
+                    <td><small class="text-muted">{{ p.purchase_date | ist }}</small></td>
                     <td><span class="badge badge-stock-ok">{{ p.status }}</span></td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    {% if total_pages > 1 %}
+    <!-- Pagination Footer -->
+    <div class="card-body pagination-wrap">
+        <div class="pagination-info">
+            Showing {{ ((page - 1) * per_page) + 1 }}–{% if page * per_page < total_purchases %}{{ page * per_page }}{% else %}{{ total_purchases }}{% endif %} of {{ total_purchases }} transactions
+        </div>
+        <div class="pagination-controls">
+            {% if page > 1 %}
+                <a href="{{ url_for('admin.purchases', page=page-1, q_id=q_id, q_name=q_name, q_phone=q_phone, q_date=q_date, sort_by=sort_by) }}" class="btn btn-outline btn-sm">&laquo; Prev</a>
+            {% else %}
+                <button class="btn btn-outline btn-sm btn-disabled" disabled>&laquo; Prev</button>
+            {% endif %}
+
+            <span class="pagination-current">Page {{ page }} of {{ total_pages }}</span>
+
+            {% if page < total_pages %}
+                <a href="{{ url_for('admin.purchases', page=page+1, q_id=q_id, q_name=q_name, q_phone=q_phone, q_date=q_date, sort_by=sort_by) }}" class="btn btn-outline btn-sm">Next &raquo;</a>
+            {% else %}
+                <button class="btn btn-outline btn-sm btn-disabled" disabled>Next &raquo;</button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
     {% else %}
         <div class="card-body">
-            <p class="text-muted text-center">No purchase transactions found in database.</p>
+            <p class="text-muted text-center">No purchase transactions found matching search criteria.</p>
         </div>
     {% endif %}
 </div>

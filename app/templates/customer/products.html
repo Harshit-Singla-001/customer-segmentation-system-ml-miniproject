@@ -1,39 +1,233 @@
 {% extends "base.html" %}
 
-{% block title %}Product Catalog — Customer Segmentation System{% endblock %}
+{% block title %}Product Catalog — Customer Portal{% endblock %}
 
 {% block content %}
+
 <div class="page-header">
-    <div>
-        <h2>Store Catalog</h2>
-        <p class="text-muted">Welcome, {{ session.get('customer_name', 'Customer') }}! Select products to add to your cart.</p>
+    <div class="page-header-left">
+        <h1 class="d-flex align-center gap-2">
+            <div class="header-title-badge">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                </svg>
+            </div>
+            Store Catalog
+        </h1>
+        <p>Browse products, select items, and complete your purchase instantly.</p>
     </div>
-    <a href="{{ url_for('customer.cart') }}" class="btn btn-secondary">
-        🛒 View Cart ({{ session.get('cart', {})|length }} items)
-    </a>
+    <div class="page-actions">
+        <a href="{{ url_for('customer.cart') }}" class="btn btn-outline d-flex align-center gap-1">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            View Cart &amp; Checkout &rarr;
+        </a>
+    </div>
 </div>
 
-{% if products %}
-<div class="grid grid-3 mt-4">
-    {% for product in products %}
-    <div class="card product-card">
-        <div class="product-category">{{ product.category }}</div>
-        <h3 class="product-title">{{ product.name }}</h3>
-        <p class="product-desc">{{ product.description }}</p>
-        <div class="product-footer">
-            <span class="product-price">{{ product.price | inr }}</span>
-            <form action="{{ url_for('customer.add_to_cart') }}" method="POST" class="add-cart-form">
-                <input type="hidden" name="product_id" value="{{ product.product_id }}">
-                <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity }}" class="qty-input">
-                <button type="submit" class="btn btn-sm btn-primary">Add to Cart</button>
-            </form>
+{% if not products %}
+    <div class="empty-state card">
+        <div class="card-body">
+            <p class="text-muted">No products available in the store catalog yet.</p>
         </div>
     </div>
-    {% endfor %}
-</div>
 {% else %}
-<div class="empty-state card">
-    <p>No products available in the database catalog yet.</p>
-</div>
+    <div class="product-grid" style="padding-bottom: 5rem;">
+        {% for prod in products %}
+            {% set in_cart_qty = session.get('cart', {}).get(prod.product_id ~ '', 0) | int %}
+            <div class="product-card">
+                <div class="product-card-header">
+                    <span class="badge badge-category">{{ prod.category }}</span>
+                    {% if prod.status == 'Out of Stock' or prod.stock_quantity <= 0 %}
+                        <span class="badge badge-stock-out">Out of Stock</span>
+                    {% else %}
+                        <span class="badge badge-stock-ok">{{ prod.stock_quantity }} left</span>
+                    {% endif %}
+                </div>
+
+                <div class="product-card-body">
+                    <h3 class="product-card-name">{{ prod.name }}</h3>
+                    <p class="product-card-desc">{{ prod.description }}</p>
+                </div>
+
+                <div class="product-card-footer">
+                    <div class="price-display">
+                        <span class="price-label">Price</span>
+                        <span class="price-value">{{ prod.price | inr }}</span>
+                    </div>
+
+                    {% if prod.status != 'Out of Stock' and prod.stock_quantity > 0 %}
+                        <div id="cart-actions-cust-{{ prod.product_id }}" class="d-flex align-center gap-1">
+                            {% if in_cart_qty > 0 %}
+                                <button type="button" class="btn btn-cart-added btn-sm d-flex align-center gap-1"
+                                        data-id="{{ prod.product_id }}"
+                                        data-name="{{ prod.name }}"
+                                        onclick="handleRemoveCartCustBtn(this)">
+                                    ✓ Added (x{{ in_cart_qty }}) • Remove
+                                </button>
+                            {% else %}
+                                <input type="number" id="qty-input-cust-{{ prod.product_id }}" value="1" min="1"
+                                       max="{{ prod.stock_quantity }}" class="qty-input" aria-label="Quantity">
+                                <button type="button" class="btn btn-primary btn-sm d-flex align-center gap-1"
+                                        data-id="{{ prod.product_id }}"
+                                        data-name="{{ prod.name }}"
+                                        onclick="handleAddCartCustBtn(this)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="9" cy="21" r="1"></circle>
+                                        <circle cx="20" cy="21" r="1"></circle>
+                                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                    </svg>
+                                    + Add
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <button class="btn btn-disabled btn-sm" disabled>Out of Stock</button>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
 {% endif %}
+
+<!-- ── Floating Bottom-Right Corner Cart Widget ────────────────────── -->
+{% set cart_dict = session.get('cart') or {} %}
+{% set cart_total_items = cart_dict.values() | sum %}
+
+<a href="{{ url_for('customer.cart') }}" id="floating-cart-widget-cust" class="floating-cart-widget"
+   {% if cart_total_items == 0 %}style="display:none;"{% else %}style="display:flex;"{% endif %}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5">
+        <circle cx="9" cy="21" r="1"></circle>
+        <circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+    </svg>
+    <span>View Cart &amp; Checkout</span>
+    <span id="floating-cart-count-cust" class="floating-cart-badge">{{ cart_total_items }}</span>
+</a>
+
+<div id="toast-container-cust"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function escapeHtml(text) {
+    if (!text) return '';
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+function handleAddCartCustBtn(btn) {
+    if (!btn) return;
+    instantAddToCartCust(btn.dataset.id, btn.dataset.name);
+}
+
+function handleRemoveCartCustBtn(btn) {
+    if (!btn) return;
+    instantRemoveFromCartCust(btn.dataset.id, btn.dataset.name);
+}
+
+function updateNavCartBadge(count) {
+    const navBadge = document.getElementById('nav-cart-count');
+    if (navBadge) {
+        navBadge.textContent = count;
+        navBadge.style.display = count > 0 ? 'inline-flex' : 'none';
+    }
+
+    const floatWidget = document.getElementById('floating-cart-widget-cust');
+    const floatCount  = document.getElementById('floating-cart-count-cust');
+    if (floatWidget && floatCount) {
+        floatCount.textContent = count;
+        floatWidget.style.display = count > 0 ? 'flex' : 'none';
+    }
+}
+
+function showToastCust(message) {
+    const container = document.getElementById('toast-container-cust') || document.body;
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>${message}</span>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-6px)';
+        toast.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        setTimeout(() => toast.remove(), 400);
+    }, 4000);
+}
+
+function instantAddToCartCust(productId, productName) {
+    const qtyInput = document.getElementById('qty-input-cust-' + productId);
+    const qty = qtyInput ? parseInt(qtyInput.value, 10) || 1 : 1;
+
+    fetch('/customer/add-to-cart', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ product_id: productId, quantity: qty })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const wrapper = document.getElementById('cart-actions-cust-' + productId);
+            if (wrapper) {
+                wrapper.innerHTML = `
+                    <button type="button" class="btn btn-cart-added btn-sm d-flex align-center gap-1"
+                            data-id="${productId}"
+                            data-name="${escapeHtml(productName)}"
+                            onclick="handleRemoveCartCustBtn(this)">
+                        ✓ Added (x${data.qty_in_cart}) • Remove
+                    </button>
+                `;
+            }
+            updateNavCartBadge(data.total_cart_count);
+            showToastCust(`'${productName}' added to cart!`);
+        }
+    });
+}
+
+function instantRemoveFromCartCust(productId, productName) {
+    fetch('/customer/remove-from-cart', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ product_id: productId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const wrapper = document.getElementById('cart-actions-cust-' + productId);
+            if (wrapper) {
+                wrapper.innerHTML = `
+                    <input type="number" id="qty-input-cust-${productId}" value="1" min="1" class="qty-input" aria-label="Quantity">
+                    <button type="button" class="btn btn-primary btn-sm d-flex align-center gap-1"
+                            data-id="${productId}"
+                            data-name="${escapeHtml(productName)}"
+                            onclick="handleAddCartCustBtn(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="9" cy="21" r="1"></circle>
+                            <circle cx="20" cy="21" r="1"></circle>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                        + Add
+                    </button>
+                `;
+            }
+            updateNavCartBadge(data.total_cart_count);
+            showToastCust(`Removed '${productName}' from cart.`);
+        }
+    });
+}
+</script>
 {% endblock %}

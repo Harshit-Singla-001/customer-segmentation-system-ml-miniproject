@@ -120,3 +120,54 @@ def init_db():
         return True, "Database initialized successfully."
     except Exception as e:
         return False, str(e)
+
+
+def check_and_auto_import_db():
+    """
+    Checks if the database host/URI parameter has changed or if the database is uninitialized.
+    If so, automatically creates schema and imports sample CSV dataset into the target MySQL database.
+    """
+    instance_dir = os.path.join(Config.BASE_DIR, 'instance')
+    os.makedirs(instance_dir, exist_ok=True)
+    fp_file = os.path.join(instance_dir, 'db_fingerprint.txt')
+
+    current_fp = f"{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_NAME}@{Config.DB_USER}"
+    saved_fp = ""
+    if os.path.exists(fp_file):
+        try:
+            with open(fp_file, 'r', encoding='utf-8') as f:
+                saved_fp = f.read().strip()
+        except Exception:
+            saved_fp = ""
+
+    needs_import = (current_fp != saved_fp)
+
+    # If fingerprint matches, verify if tables actually exist and have data
+    if not needs_import:
+        try:
+            res = execute_query("SELECT COUNT(*) as count FROM customers", fetch_one=True)
+            if not res or res.get('count', 0) == 0:
+                needs_import = True
+        except Exception:
+            needs_import = True
+
+    if needs_import:
+        print(f"[AUTO-DB] New or uninitialized database connection detected ({current_fp}). Initializing schema and importing CSV sample dataset...")
+        ok, msg = init_db()
+        if not ok:
+            print(f"[AUTO-DB] Error initializing DB schema: {msg}")
+            return False, msg
+
+        try:
+            from scripts.import_to_db import import_data
+            import_data()
+            with open(fp_file, 'w', encoding='utf-8') as f:
+                f.write(current_fp)
+            print("[AUTO-DB] Sample dataset auto-imported successfully into the new database!")
+            return True, "Auto-imported CSV data into new DB."
+        except Exception as e:
+            print(f"[AUTO-DB] Error importing CSV data: {e}")
+            return False, str(e)
+
+    return True, "Database link unchanged."
+

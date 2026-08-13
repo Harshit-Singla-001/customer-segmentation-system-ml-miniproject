@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SegmentIQ — Customer Segmentation System{% endblock %}</title>
     <meta name="description" content="Customer Segmentation System using K-Means Clustering and MySQL. Educational DBMS project with retail analytics.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2.5'%3E%3Cpolygon points='12 2 2 7 12 12 22 7 12 2'/%3E%3Cpolyline points='2 17 12 22 22 17'/%3E%3Cpolyline points='2 12 12 17 22 12'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -27,6 +28,8 @@
             </a>
 
             <div class="nav-links">
+                {% if not session.get('admin_id') %}
+                {# Customer-only nav: Catalog + Cart #}
                 <a href="{{ url_for('main.index') }}" class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -41,13 +44,12 @@
                             <circle cx="20" cy="21" r="1"></circle>
                             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                         </svg>
-                        Cart
-                        {% set cart_count = session.get('cart', {}) | length %}
-                        {% if cart_count > 0 %}
-                            <span class="cart-count">{{ cart_count }}</span>
-                        {% endif %}
+                        {% set cart_dict = session.get('cart') or {} %}
+                        {% set cart_count = cart_dict | length %}
+                        <span id="nav-cart-count" class="cart-count" {% if cart_count == 0 %}style="display:none;"{% endif %}>{{ cart_count }}</span>
                     </a>
                 </div>
+                {% endif %}
 
                 {% if session.get('admin_id') %}
                     <a href="{{ url_for('admin.dashboard') }}" class="nav-btn nav-btn-admin">
@@ -119,11 +121,14 @@
     <!-- ── Footer ────────────────────────────────────────────────────── -->
     <footer class="footer">
         <div class="footer-content">
-            <div class="footer-brand">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                    <polyline points="2 17 12 22 22 17"></polyline>
-                </svg>
+            <div class="footer-brand d-flex align-center gap-2">
+                <div class="brand-icon" style="width: 26px; height: 26px; border-radius: 8px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                </div>
                 Segment<span class="footer-accent">IQ</span>
             </div>
             <span class="footer-copy">&copy; 2026 SegmentIQ — Customer Segmentation using K-Means &amp; MySQL</span>

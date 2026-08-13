@@ -1,0 +1,1 @@
+mysql-10da54c1-customer-segmentation.j.aivencloud.com:21978/customer_segmentation_db@avnadmin

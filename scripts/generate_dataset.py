@@ -260,8 +260,8 @@ def generate_purchases_and_items(customers, products, target_total_purchases):
     start_date = datetime.datetime.now() - datetime.timedelta(days=365)
     end_date = datetime.datetime.now()
     
-    purchase_counter = 1
-    item_counter = 1
+    # 2. Generate raw transactions with random dates based on registration
+    raw_purchases = []
     
     for c in customers:
         cid = c["customer_id"]
@@ -272,7 +272,6 @@ def generate_purchases_and_items(customers, products, target_total_purchases):
         cust_start_date = max(start_date, cust_reg_date)
         
         for _ in range(n_purchases):
-            pur_id = f"PUR{purchase_counter:06d}"
             pur_date = sample_purchase_date(cust_start_date, end_date)
             
             if profile == "High Value":
@@ -289,37 +288,55 @@ def generate_purchases_and_items(customers, products, target_total_purchases):
             num_items = random.choices([1, 2, 3, 4], weights=[0.50, 0.30, 0.15, 0.05])[0]
             selected_items = random.sample(chosen_pool, k=min(num_items, len(chosen_pool)))
             
-            purchase_total = 0.0
-            
-            for prod in selected_items:
-                item_id = f"ITEM{item_counter:07d}"
-                max_q = prod["_max_qty"]
-                
-                qty = random.randint(1, max_q)
-                unit_price = prod["price"]
-                subtotal = round(qty * unit_price, 2)
-                
-                purchase_total += subtotal
-                product_units_sold[prod["product_id"]] += qty
-                
-                purchase_items.append({
-                    "purchase_item_id": item_id,
-                    "purchase_id": pur_id,
-                    "product_id": prod["product_id"],
-                    "quantity": qty,
-                    "unit_price": unit_price,
-                    "subtotal": subtotal
-                })
-                item_counter += 1
-                
-            purchases.append({
-                "purchase_id": pur_id,
+            raw_purchases.append({
                 "customer_id": cid,
-                "purchase_date": pur_date.strftime("%Y-%m-%d %H:%M:%S"),
-                "total_amount": round(purchase_total, 2),
-                "status": "Completed"
+                "purchase_date": pur_date,
+                "selected_items": selected_items
             })
-            purchase_counter += 1
+            
+    # 3. SORT ALL TRANSACTIONS CHRONOLOGICALLY BY DATE
+    raw_purchases.sort(key=lambda x: x["purchase_date"])
+    
+    # 4. Assign sequential purchase_id and purchase_item_id in strict chronological order
+    purchase_counter = 1
+    item_counter = 1
+    
+    for rp in raw_purchases:
+        pur_id = f"PUR{purchase_counter:06d}"
+        pur_date_str = rp["purchase_date"].strftime("%Y-%m-%d %H:%M:%S")
+        cid = rp["customer_id"]
+        
+        purchase_total = 0.0
+        
+        for prod in rp["selected_items"]:
+            item_id = f"ITEM{item_counter:07d}"
+            max_q = prod["_max_qty"]
+            
+            qty = random.randint(1, max_q)
+            unit_price = prod["price"]
+            subtotal = round(qty * unit_price, 2)
+            
+            purchase_total += subtotal
+            product_units_sold[prod["product_id"]] += qty
+            
+            purchase_items.append({
+                "purchase_item_id": item_id,
+                "purchase_id": pur_id,
+                "product_id": prod["product_id"],
+                "quantity": qty,
+                "unit_price": unit_price,
+                "subtotal": subtotal
+            })
+            item_counter += 1
+            
+        purchases.append({
+            "purchase_id": pur_id,
+            "customer_id": cid,
+            "purchase_date": pur_date_str,
+            "total_amount": round(purchase_total, 2),
+            "status": "Completed"
+        })
+        purchase_counter += 1
 
     # Update product stock and status
     for prod in products:

@@ -8,9 +8,9 @@ def index():
     categories = []
     products_list = []
     try:
-        categories_raw = execute_query("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != '' ORDER BY category", fetch_all=True) or []
-        categories = [c['category'] for c in categories_raw]
+        # Optimized single query: fetch products and extract unique categories in Python
         products_list = execute_query("SELECT * FROM products ORDER BY category, name", fetch_all=True) or []
+        categories = sorted(list(set(p['category'] for p in products_list if p.get('category'))))
     except Exception as e:
         flash(f"Database warning: {str(e)}", "warning")
 
