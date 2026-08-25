@@ -138,7 +138,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!phone || phone.length !== 10 || !/^[6-9]\d{9}$/.test(phone)) {
             if (banner) {
                 banner.style.display = 'block';
-                banner.innerHTML = '<div class="alert alert-warning" style="padding:0.5rem 0.8rem; font-size:0.82rem;">Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.</div>';
+                banner.innerHTML = `
+                    <div class="checkout-status-alert alert-warning">
+                        <span style="font-size:1.05rem; line-height:1; flex-shrink:0;">⚠️</span>
+                        <div style="flex:1;">Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.</div>
+                    </div>
+                `;
             }
             phoneInput.focus();
             return;
@@ -151,7 +156,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (banner) {
                 banner.style.display = 'block';
                 if (data.exists) {
-                    banner.innerHTML = `<div class="alert alert-success" style="padding:0.6rem 0.85rem; font-size:0.85rem;">✓ Welcome back, <strong>${data.name}</strong>! Account verified. Click confirm below to complete your order.</div>`;
+                    banner.innerHTML = `
+                        <div class="checkout-status-alert alert-success">
+                            <span style="font-size:1.1rem; line-height:1.2; font-weight:700; flex-shrink:0;">✓</span>
+                            <div style="flex:1;">
+                                <strong>Welcome back, ${data.name}!</strong> Account verified. Click confirm below to complete your order.
+                            </div>
+                        </div>
+                    `;
                     if (extraFields) extraFields.style.display = 'none';
                     if (nameInput) { nameInput.value = data.name; nameInput.removeAttribute('required'); }
                     if (ageInput && data.age) { ageInput.value = data.age; ageInput.removeAttribute('required'); }
@@ -159,7 +171,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (cityInput && data.city) cityInput.value = data.city;
                     if (incomeInput && data.income) incomeInput.value = data.income;
                 } else {
-                    banner.innerHTML = `<div class="alert alert-info" style="padding:0.6rem 0.85rem; font-size:0.85rem;">ℹ New customer mobile number. Please fill out your account details below.</div>`;
+                    banner.innerHTML = `
+                        <div class="checkout-status-alert alert-info">
+                            <span style="font-size:1.05rem; line-height:1; flex-shrink:0;">ℹ️</span>
+                            <div style="flex:1;">
+                                <strong>New customer mobile number.</strong> Please fill out your account details below.
+                            </div>
+                        </div>
+                    `;
                     if (extraFields) extraFields.style.display = 'block';
                     if (nameInput) nameInput.setAttribute('required', 'required');
                     if (ageInput) ageInput.setAttribute('required', 'required');
