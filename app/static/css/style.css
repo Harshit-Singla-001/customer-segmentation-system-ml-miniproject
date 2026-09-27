@@ -1668,3 +1668,56 @@ thead th.sticky-col-right {
     border-left-color: var(--primary);
 }
 
+/* ── K-Means Customer Segment Cards ─────────────────────────────────────── */
+.cluster-card {
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 1.25rem;
+    transition: transform var(--fast), box-shadow var(--fast);
+}
+
+.cluster-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.cluster-card-high {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.01));
+    border-top: 3px solid #10b981;
+}
+
+.cluster-card-average {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(99, 102, 241, 0.01));
+    border-top: 3px solid #6366f1;
+}
+
+.cluster-card-budget {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(245, 158, 11, 0.01));
+    border-top: 3px solid #f59e0b;
+}
+
+.cluster-badge-high {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #059669 !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+}
+
+.cluster-badge-average {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #4338ca !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+}
+
+.cluster-badge-budget {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #b45309 !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+}
+
+

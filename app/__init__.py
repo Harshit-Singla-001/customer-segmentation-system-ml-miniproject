@@ -3,7 +3,7 @@ from flask import Flask
 from config import Config
 
 def format_inr(value):
-    """Format monetary numbers into Indian Rupee style (e.g. ₹1,25,000) without trailing .00"""
+    """Format monetary numbers into clean Indian Rupee style (e.g. ₹1,25,000) without decimal points."""
     if value is None:
         return "₹0"
     try:
@@ -12,16 +12,8 @@ def format_inr(value):
         return "₹0"
 
     is_negative = val < 0
-    val = abs(val)
-
-    # Omit .00 for whole numbers
-    if val.is_integer() or abs(val - round(val)) < 0.001:
-        integer_part = str(int(round(val)))
-        decimal_part = ""
-    else:
-        s = f"{val:.2f}"
-        parts = s.split('.')
-        integer_part, decimal_part = parts[0], "." + parts[1]
+    val = round(abs(val))
+    integer_part = str(int(val))
 
     if len(integer_part) <= 3:
         formatted_int = integer_part
@@ -37,7 +29,7 @@ def format_inr(value):
         formatted_int = ','.join(groups) + ',' + last_three
 
     prefix = "-₹" if is_negative else "₹"
-    return f"{prefix}{formatted_int}{decimal_part}"
+    return f"{prefix}{formatted_int}"
 
 from datetime import datetime, timezone, timedelta
 
@@ -100,12 +92,13 @@ def create_app(config_class=Config):
     app.register_blueprint(customer_bp, url_prefix='/customer')
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
-    # Automatically check DB link and auto-import CSV sample data if DB connection changed
-    with app.app_context():
-        try:
-            from app.db.connection import check_and_auto_import_db
-            check_and_auto_import_db()
-        except Exception as e:
-            print(f"[AUTO-DB] Startup DB check info: {e}")
+    # Automatically verify SQLite/MySQL database and auto-import dataset if not yet inserted
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
+        with app.app_context():
+            try:
+                from app.db.connection import check_and_auto_import_db
+                check_and_auto_import_db()
+            except Exception as e:
+                print(f"[AUTO-DB] Startup DB check info: {e}")
 
     return app

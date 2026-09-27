@@ -257,7 +257,17 @@ def checkout():
 
         # Clear cart session
         session['cart'] = {}
-        flash(f"Order #{purchase_id} placed successfully for {name}! Total: ₹{total_amount:,.2f}", "success")
+
+        # 5. Instant K-Means Cluster Assignment for new or returning customer
+        cluster_name = None
+        try:
+            from app.ml.clustering import classify_single_customer
+            cluster_label, cluster_name = classify_single_customer(customer_id)
+        except Exception as e:
+            print(f"[ML] Error classifying customer #{customer_id}: {e}")
+
+        segment_info = f" • Customer Segment: {cluster_name}" if cluster_name else ""
+        flash(f"Order #{purchase_id} placed successfully for {name}! Total: ₹{total_amount:,.2f}{segment_info}", "success")
         return redirect(url_for('main.index'))
 
     except Exception as e:

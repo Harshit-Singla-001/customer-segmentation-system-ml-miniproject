@@ -8,7 +8,14 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'default-dev-secret-key')
     FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
     
-    # MySQL Database Settings
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    
+    # Database Settings ('sqlite' or 'mysql')
+    DB_TYPE = os.environ.get('DB_TYPE', 'sqlite').lower()
+    SQLITE_DB_NAME = os.environ.get('SQLITE_DB_NAME', 'customer_segmentation.db')
+    SQLITE_PATH = os.path.join(BASE_DIR, 'instance', SQLITE_DB_NAME)
+
+    # MySQL Database Settings (fallback/optional)
     DB_HOST = os.environ.get('DB_HOST', 'localhost')
     DB_PORT = int(os.environ.get('DB_PORT', 3306))
     DB_USER = os.environ.get('DB_USER', 'root')
@@ -16,7 +23,6 @@ class Config:
     DB_NAME = os.environ.get('DB_NAME', 'customer_segmentation_db')
     
     # Upload Settings
-    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
     UPLOAD_FOLDER = os.path.join(BASE_DIR, os.environ.get('UPLOAD_FOLDER', 'uploads'))
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))
     ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}

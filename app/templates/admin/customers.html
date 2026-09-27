@@ -57,52 +57,118 @@
     </a>
 </div>
 
-<!-- Sort Controls -->
+<!-- Sort & Filter Bar covering full row -->
 <div class="card mb-3">
-    <div class="card-body" style="padding: 0.85rem 1.25rem;">
-        <form method="GET" action="{{ url_for('admin.customers') }}" class="sort-form">
-            <div class="d-flex align-center gap-2" style="flex-wrap:wrap;">
-                <span class="fw-600" style="white-space:nowrap; color:var(--text-2); font-size:0.85rem;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px; margin-right:4px;">
-                        <line x1="8" y1="6" x2="21" y2="6"></line>
-                        <line x1="8" y1="12" x2="21" y2="12"></line>
-                        <line x1="8" y1="18" x2="21" y2="18"></line>
-                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                    </svg>
-                    Sort by:
-                </span>
-                <select name="sort_by" id="sort-by-select" class="form-control sort-select">
-                    <option value="customer_id" {% if sort_by == 'customer_id' %}selected{% endif %}>Customer ID</option>
-                    <option value="name"        {% if sort_by == 'name'        %}selected{% endif %}>Customer Name</option>
-                    <option value="age"         {% if sort_by == 'age'         %}selected{% endif %}>Age</option>
-                    <option value="income"      {% if sort_by == 'income'      %}selected{% endif %}>Annual Income</option>
-                    <option value="total_spent" {% if sort_by == 'total_spent' %}selected{% endif %}>Total Spending</option>
-                    <option value="order_count" {% if sort_by == 'order_count' %}selected{% endif %}>Purchase Count</option>
-                    <option value="segment"     {% if sort_by == 'segment'     %}selected{% endif %}>Segment</option>
-                </select>
+    <div class="card-body" style="padding: 1rem 1.25rem;">
+        <form method="GET" action="{{ url_for('admin.customers') }}" id="customerSortFilterForm">
+            <input type="hidden" name="sort_by" id="input_sort_by" value="{{ sort_by }}">
+            <input type="hidden" name="sort_dir" id="input_sort_dir" value="{{ sort_dir }}">
 
-                <select name="sort_dir" id="sort-dir-select" class="form-control sort-select">
-                    {% if sort_by == 'name' %}
-                        <option value="asc"  {% if sort_dir == 'asc'  %}selected{% endif %}>A → Z</option>
-                        <option value="desc" {% if sort_dir == 'desc' %}selected{% endif %}>Z → A</option>
-                    {% elif sort_by == 'age' %}
-                        <option value="asc"  {% if sort_dir == 'asc'  %}selected{% endif %}>Young → Old</option>
-                        <option value="desc" {% if sort_dir == 'desc' %}selected{% endif %}>Old → Young</option>
-                    {% else %}
-                        <option value="asc"  {% if sort_dir == 'asc'  %}selected{% endif %}>Low → High</option>
-                        <option value="desc" {% if sort_dir == 'desc' %}selected{% endif %}>High → Low</option>
+            <div class="d-flex align-center justify-between mb-2 flex-wrap gap-2">
+                <div class="d-flex align-center gap-2">
+                    <span class="fw-700 text-xs text-uppercase" style="letter-spacing: 0.05em; color: var(--text-2); display: flex; align-items: center; gap: 5px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                        </svg>
+                        Filter &amp; Sort Customers
+                    </span>
+                    {% if segment %}
+                        <span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #4338ca; font-weight: 700; font-size: 0.8rem; border: 1px solid rgba(99, 102, 241, 0.25);">
+                            Segment: {{ segment }}
+                        </span>
                     {% endif %}
-                </select>
+                </div>
+                <div class="d-flex align-center gap-2">
+                    {% if segment or sort_by != 'total_spent' or sort_dir != 'desc' %}
+                        <a href="{{ url_for('admin.customers') }}" class="btn btn-outline btn-xs" style="padding: 0.25rem 0.65rem; font-size: 0.78rem;">✕ Reset All</a>
+                    {% endif %}
+                </div>
+            </div>
 
-                <button type="submit" class="btn btn-primary btn-sm">Apply Sort</button>
+            <!-- Full row separate dropdown for each factor -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 0.65rem; width: 100%; align-items: end;">
+                <!-- 1. Customer ID -->
+                <div>
+                    <label class="text-xs fw-600 text-muted mb-1 d-block">Customer ID</label>
+                    <select class="form-control form-control-sm sort-factor-select {% if sort_by == 'customer_id' %}sort-active-control{% endif %}"
+                            onchange="submitFactorSort('customer_id', this.value)">
+                        <option value="" {% if sort_by != 'customer_id' %}selected{% endif %}>Customer ID</option>
+                        <option value="desc" {% if sort_by == 'customer_id' and sort_dir == 'desc' %}selected{% endif %}>High → Low</option>
+                        <option value="asc" {% if sort_by == 'customer_id' and sort_dir == 'asc' %}selected{% endif %}>Low → High</option>
+                    </select>
+                </div>
 
-                <a href="{{ url_for('admin.customers') }}" class="btn btn-outline btn-sm">Reset</a>
+                <!-- 2. Customer Name -->
+                <div>
+                    <label class="text-xs fw-600 text-muted mb-1 d-block">Customer Name</label>
+                    <select class="form-control form-control-sm sort-factor-select {% if sort_by == 'name' %}sort-active-control{% endif %}"
+                            onchange="submitFactorSort('name', this.value)">
+                        <option value="" {% if sort_by != 'name' %}selected{% endif %}>Customer Name</option>
+                        <option value="asc" {% if sort_by == 'name' and sort_dir == 'asc' %}selected{% endif %}>A → Z</option>
+                        <option value="desc" {% if sort_by == 'name' and sort_dir == 'desc' %}selected{% endif %}>Z → A</option>
+                    </select>
+                </div>
 
-                <span class="text-muted" style="font-size:0.82rem; margin-left:auto;">
-                    Total {{ total_customers }} customer{{ 's' if total_customers != 1 else '' }}
-                </span>
+                <!-- 3. Age -->
+                <div>
+                    <label class="text-xs fw-600 text-muted mb-1 d-block">Age</label>
+                    <select class="form-control form-control-sm sort-factor-select {% if sort_by == 'age' %}sort-active-control{% endif %}"
+                            onchange="submitFactorSort('age', this.value)">
+                        <option value="" {% if sort_by != 'age' %}selected{% endif %}>Age</option>
+                        <option value="desc" {% if sort_by == 'age' and sort_dir == 'desc' %}selected{% endif %}>High → Low (Oldest)</option>
+                        <option value="asc" {% if sort_by == 'age' and sort_dir == 'asc' %}selected{% endif %}>Low → High (Youngest)</option>
+                    </select>
+                </div>
+
+                <!-- 4. Annual Income -->
+                <div>
+                    <label class="text-xs fw-600 text-muted mb-1 d-block">Annual Income</label>
+                    <select class="form-control form-control-sm sort-factor-select {% if sort_by == 'income' %}sort-active-control{% endif %}"
+                            onchange="submitFactorSort('income', this.value)">
+                        <option value="" {% if sort_by != 'income' %}selected{% endif %}>Annual Income</option>
+                        <option value="desc" {% if sort_by == 'income' and sort_dir == 'desc' %}selected{% endif %}>High → Low</option>
+                        <option value="asc" {% if sort_by == 'income' and sort_dir == 'asc' %}selected{% endif %}>Low → High</option>
+                    </select>
+                </div>
+
+                <!-- 5. Total Spending -->
+                <div>
+                    <label class="text-xs fw-600 text-muted mb-1 d-block">Total Spending</label>
+                    <select class="form-control form-control-sm sort-factor-select {% if sort_by == 'total_spent' %}sort-active-control{% endif %}"
+                            onchange="submitFactorSort('total_spent', this.value)">
+                        <option value="" {% if sort_by != 'total_spent' %}selected{% endif %}>Total Spending</option>
+                        <option value="desc" {% if sort_by == 'total_spent' and sort_dir == 'desc' %}selected{% endif %}>High → Low</option>
+                        <option value="asc" {% if sort_by == 'total_spent' and sort_dir == 'asc' %}selected{% endif %}>Low → High</option>
+                    </select>
+                </div>
+
+                <!-- 6. Purchase Count -->
+                <div>
+                    <label class="text-xs fw-600 text-muted mb-1 d-block">Purchase Count</label>
+                    <select class="form-control form-control-sm sort-factor-select {% if sort_by == 'order_count' %}sort-active-control{% endif %}"
+                            onchange="submitFactorSort('order_count', this.value)">
+                        <option value="" {% if sort_by != 'order_count' %}selected{% endif %}>Purchase Count</option>
+                        <option value="desc" {% if sort_by == 'order_count' and sort_dir == 'desc' %}selected{% endif %}>High → Low</option>
+                        <option value="asc" {% if sort_by == 'order_count' and sort_dir == 'asc' %}selected{% endif %}>Low → High</option>
+                    </select>
+                </div>
+
+                <!-- 7. Segment -->
+                <div>
+                    <label class="text-xs fw-600 text-muted mb-1 d-block">Segment</label>
+                    <select name="segment" id="select_segment" class="form-control form-control-sm sort-factor-select {% if segment %}sort-active-control{% endif %}"
+                            onchange="submitSegmentFilter(this.value)">
+                        <option value="" {% if not segment %}selected{% endif %}>All Segments</option>
+                        <option value="High Paying Customer" {% if segment == 'High Paying Customer' %}selected{% endif %}>High Paying Customer</option>
+                        <option value="Average Customer" {% if segment == 'Average Customer' %}selected{% endif %}>Average Customer</option>
+                        <option value="Budget Customer" {% if segment == 'Budget Customer' %}selected{% endif %}>Budget Customer</option>
+                    </select>
+                </div>
             </div>
         </form>
     </div>
@@ -116,7 +182,8 @@
         </h3>
         <span class="text-muted" style="font-size:0.82rem;">
             Sorted by <strong>{{ sort_by | replace('_', ' ') | title }}</strong>
-            ({{ 'Ascending' if sort_dir == 'asc' else 'Descending' }})
+            ({{ 'High → Low' if sort_dir == 'desc' else 'Low → High' }})
+            {% if segment %} · Filtered by <strong>{{ segment }}</strong>{% endif %}
             {% if total_pages > 1 %} · Page {{ page }} of {{ total_pages }}{% endif %}
         </span>
     </div>
@@ -126,44 +193,49 @@
             <thead>
                 <tr>
                     <th>
-                        <a href="{{ url_for('admin.customers', sort_by='customer_id', sort_dir='asc' if (sort_by != 'customer_id' or sort_dir == 'desc') else 'desc', page=page) }}"
+                        <a href="{{ url_for('admin.customers', sort_by='customer_id', sort_dir='asc' if (sort_by == 'customer_id' and sort_dir == 'desc') else 'desc', page=1, segment=segment) }}"
                            class="sort-header {% if sort_by == 'customer_id' %}sort-active{% endif %}">
-                            ID {% if sort_by == 'customer_id' %}{{ '↑' if sort_dir == 'asc' else '↓' }}{% else %}↕{% endif %}
+                            ID {% if sort_by == 'customer_id' %}{{ '↓' if sort_dir == 'desc' else '↑' }}{% else %}↕{% endif %}
                         </a>
                     </th>
                     <th>
-                        <a href="{{ url_for('admin.customers', sort_by='name', sort_dir='asc' if (sort_by != 'name' or sort_dir == 'desc') else 'desc', page=page) }}"
+                        <a href="{{ url_for('admin.customers', sort_by='name', sort_dir='asc' if (sort_by == 'name' and sort_dir == 'desc') else 'desc', page=1, segment=segment) }}"
                            class="sort-header {% if sort_by == 'name' %}sort-active{% endif %}">
-                            Customer {% if sort_by == 'name' %}{{ '↑' if sort_dir == 'asc' else '↓' }}{% else %}↕{% endif %}
+                            Customer {% if sort_by == 'name' %}{{ '↓' if sort_dir == 'desc' else '↑' }}{% else %}↕{% endif %}
                         </a>
                     </th>
                     <th>Contact</th>
+                    <th>
+                        <a href="{{ url_for('admin.customers', sort_by='age', sort_dir='asc' if (sort_by == 'age' and sort_dir == 'desc') else 'desc', page=1, segment=segment) }}"
+                           class="sort-header {% if sort_by == 'age' %}sort-active{% endif %}">
+                            Age {% if sort_by == 'age' %}{{ '↓' if sort_dir == 'desc' else '↑' }}{% else %}↕{% endif %}
+                        </a>
+                    </th>
                     <th>City</th>
                     <th>
-                        <a href="{{ url_for('admin.customers', sort_by='income', sort_dir='asc' if (sort_by != 'income' or sort_dir == 'desc') else 'desc', page=page) }}"
+                        <a href="{{ url_for('admin.customers', sort_by='income', sort_dir='asc' if (sort_by == 'income' and sort_dir == 'desc') else 'desc', page=1, segment=segment) }}"
                            class="sort-header {% if sort_by == 'income' %}sort-active{% endif %}">
-                            Annual Income {% if sort_by == 'income' %}{{ '↑' if sort_dir == 'asc' else '↓' }}{% else %}↕{% endif %}
+                            Annual Income {% if sort_by == 'income' %}{{ '↓' if sort_dir == 'desc' else '↑' }}{% else %}↕{% endif %}
                         </a>
                     </th>
                     <th>
-                        <a href="{{ url_for('admin.customers', sort_by='order_count', sort_dir='asc' if (sort_by != 'order_count' or sort_dir == 'desc') else 'desc', page=page) }}"
+                        <a href="{{ url_for('admin.customers', sort_by='order_count', sort_dir='asc' if (sort_by == 'order_count' and sort_dir == 'desc') else 'desc', page=1, segment=segment) }}"
                            class="sort-header {% if sort_by == 'order_count' %}sort-active{% endif %}">
-                            Orders {% if sort_by == 'order_count' %}{{ '↑' if sort_dir == 'asc' else '↓' }}{% else %}↕{% endif %}
+                            Orders {% if sort_by == 'order_count' %}{{ '↓' if sort_dir == 'desc' else '↑' }}{% else %}↕{% endif %}
                         </a>
                     </th>
                     <th>
-                        <a href="{{ url_for('admin.customers', sort_by='total_spent', sort_dir='asc' if (sort_by != 'total_spent' or sort_dir == 'desc') else 'desc', page=page) }}"
+                        <a href="{{ url_for('admin.customers', sort_by='total_spent', sort_dir='asc' if (sort_by == 'total_spent' and sort_dir == 'desc') else 'desc', page=1, segment=segment) }}"
                            class="sort-header {% if sort_by == 'total_spent' %}sort-active{% endif %}">
-                            Total Spent {% if sort_by == 'total_spent' %}{{ '↑' if sort_dir == 'asc' else '↓' }}{% else %}↕{% endif %}
+                            Total Spent {% if sort_by == 'total_spent' %}{{ '↓' if sort_dir == 'desc' else '↑' }}{% else %}↕{% endif %}
                         </a>
                     </th>
                     <th>
-                        <a href="{{ url_for('admin.customers', sort_by='segment', sort_dir='asc' if (sort_by != 'segment' or sort_dir == 'desc') else 'desc', page=page) }}"
+                        <a href="{{ url_for('admin.customers', sort_by='segment', sort_dir='asc' if (sort_by == 'segment' and sort_dir == 'desc') else 'desc', page=1, segment=segment) }}"
                            class="sort-header {% if sort_by == 'segment' %}sort-active{% endif %}">
-                            Segment {% if sort_by == 'segment' %}{{ '↑' if sort_dir == 'asc' else '↓' }}{% else %}↕{% endif %}
+                            Segment {% if sort_by == 'segment' %}{{ '↓' if sort_dir == 'desc' else '↑' }}{% else %}↕{% endif %}
                         </a>
                     </th>
-                    <th class="text-right">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -172,7 +244,7 @@
                     <td><span class="text-muted font-mono">#{{ c.customer_id }}</span></td>
                     <td>
                         <div class="fw-600 text-no-wrap">{{ c.name }}</div>
-                        <small class="text-muted text-no-wrap">Age: {{ c.age or '—' }} · {{ c.gender or '—' }}</small>
+                        <small class="text-muted text-no-wrap">{{ c.gender or '—' }}</small>
                     </td>
                     <td>
                         <div class="font-mono fw-500" style="font-size:0.8rem;">{{ c.phone }}</div>
@@ -180,26 +252,29 @@
                             <small class="text-muted text-truncate-email" title="{{ c.email }}">{{ c.email }}</small>
                         {% endif %}
                     </td>
+                    <td><span class="badge badge-category">{{ c.age or '—' }} yrs</span></td>
                     <td class="text-no-wrap">{{ c.city or '—' }}</td>
                     <td class="text-no-wrap font-mono">{% if c.income %}{{ c.income | inr }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
                     <td class="text-center"><span class="badge badge-category">{{ c.order_count }}</span></td>
                     <td class="fw-700 text-no-wrap font-mono">{{ c.total_spent | inr }}</td>
                     <td>
                         {% if c.cluster_label is not none and c.cluster_label != '' %}
-                            <span class="badge badge-category">
-                                {% if c.cluster_name %}{{ c.cluster_name }}{% else %}Segment {{ c.cluster_label }}{% endif %}
-                            </span>
+                            {% if c.cluster_name == 'High Paying Customer' %}
+                                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600;">
+                                    ★ High Paying
+                                </span>
+                            {% elif c.cluster_name == 'Average Customer' %}
+                                <span class="badge badge-category" style="font-weight: 600;">
+                                    Average
+                                </span>
+                            {% else %}
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 600;">
+                                    Budget
+                                </span>
+                            {% endif %}
                         {% else %}
                             <span class="text-muted" style="font-size:0.8rem;">—</span>
                         {% endif %}
-                    </td>
-                    <td class="text-right">
-                        <div class="d-flex gap-1 align-center justify-end">
-                            <form action="{{ url_for('admin.delete_customer', customer_id=c.customer_id, page=page, sort_by=sort_by, sort_dir=sort_dir) }}" method="POST" style="display:inline;"
-                                  onsubmit="return confirm('Permanently delete customer {{ c.name }}?');">
-                                <button type="submit" class="btn btn-danger btn-xs">Delete</button>
-                            </form>
-                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -215,7 +290,7 @@
         </div>
         <div class="pagination-controls">
             {% if page > 1 %}
-                <a href="{{ url_for('admin.customers', page=page-1, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline btn-sm">&laquo; Prev</a>
+                <a href="{{ url_for('admin.customers', page=page-1, sort_by=sort_by, sort_dir=sort_dir, segment=segment) }}" class="btn btn-outline btn-sm">&laquo; Prev</a>
             {% else %}
                 <button class="btn btn-outline btn-sm btn-disabled" disabled>&laquo; Prev</button>
             {% endif %}
@@ -223,7 +298,7 @@
             <span class="pagination-current">Page {{ page }} of {{ total_pages }}</span>
 
             {% if page < total_pages %}
-                <a href="{{ url_for('admin.customers', page=page+1, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline btn-sm">Next &raquo;</a>
+                <a href="{{ url_for('admin.customers', page=page+1, sort_by=sort_by, sort_dir=sort_dir, segment=segment) }}" class="btn btn-outline btn-sm">Next &raquo;</a>
             {% else %}
                 <button class="btn btn-outline btn-sm btn-disabled" disabled>Next &raquo;</button>
             {% endif %}
@@ -233,9 +308,35 @@
 
     {% else %}
         <div class="card-body">
-            <p class="text-muted text-center">No customers found in database.</p>
+            <p class="text-muted text-center py-4">No customers found matching the criteria.</p>
         </div>
     {% endif %}
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function submitFactorSort(factor, dir) {
+    if (!dir) {
+        dir = 'desc'; // Default order is always High to Low
+    }
+    document.getElementById('input_sort_by').value = factor;
+    document.getElementById('input_sort_dir').value = dir;
+    document.getElementById('customerSortFilterForm').submit();
+}
+
+function submitSegmentFilter(val) {
+    document.getElementById('customerSortFilterForm').submit();
+}
+</script>
+
+<style>
+.sort-active-control {
+    border-color: #6366f1 !important;
+    background-color: rgba(99, 102, 241, 0.05) !important;
+    font-weight: 600 !important;
+    color: #4338ca !important;
+}
+</style>
 {% endblock %}

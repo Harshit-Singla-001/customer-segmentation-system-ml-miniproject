@@ -1,21 +1,27 @@
 # Customer Segmentation System using K-Means Clustering
 
-An educational full-stack DBMS & Data Science project built with **Flask**, **MySQL**, and **K-Means Clustering (Scikit-Learn)**.
+An educational full-stack Data Science & Machine Learning web application built with **Flask**, **SQLite / MySQL**, and **K-Means Clustering (Scikit-Learn)**.
 
 ---
 
 ## 📌 Overview
 
-The **Customer Segmentation System** demonstrates how customer details, purchasing history, and imported datasets are stored in a MySQL relational database and analyzed using machine learning (K-Means Clustering) to discover customer segments.
+The **Customer Segmentation System** demonstrates how customer profiles, purchasing history, and transactional metrics are stored in a relational database and analyzed using unsupervised machine learning (**K-Means Clustering**) to segment customers into actionable behavioural groups.
 
 ### Key Capabilities
-- **Synthetic Dataset Generator**: Create realistic, seedable, normalized datasets with hidden customer behavior profiles (`scripts/generate_dataset.py`).
-- **Direct Database Importer**: High-performance bulk import of CSV records into online MySQL (`scripts/import_to_db.py`).
-- **Phone-First Customer Verification**: Instant 10-digit mobile lookup (`/customer/check-customer?phone=...`) for 1-click checkout or dynamic new customer registration.
-- **Demographic Segmentation**: Captures `age` and `gender` alongside `income` and purchase metrics for multi-dimensional K-Means clustering.
-- **Dynamic Device Timezone Engine**: Dynamically inspects the host device system clock and converts transaction timestamps to Indian Standard Time (IST — Asia/Kolkata / UTC+5:30).
-- **Admin Management Panel**: Single-screen optimized dashboards for managing catalog items, customers (with direct Delete actions), transactions, imports, and analytical segment visualization.
-- **K-Means Analytics**: Standardize numerical customer metrics (spending, frequency, income, age) and analyze discovered customer segments.
+- **Fast Self-Seeding Database**: Powered by zero-configuration SQLite (`instance/customer_segmentation.db`) with smart conditional startup checks that load seeded demo data instantly without repetitive slow imports (with optional MySQL cloud support).
+- **Instant 3-Cluster Segmentation**: Customers are partitioned into exactly **3 distinct behavioral clusters**:
+  - 🌟 **High Paying Customer** (High income, high spending, premium buyers)
+  - 🔷 **Average Customer** (Moderate income and steady spending frequency)
+  - 🏷️ **Budget Customer** (Value-conscious customers with lower spending)
+- **Real-Time Dynamic Clustering**:
+  - **New Customers**: Instantly classified into one of the 3 clusters upon their first checkout/registration.
+  - **Returning Customers**: Automatically re-evaluated and reassigned whenever new purchases alter their spending, frequency, or recency profile.
+- **Demographic Sub-Segment Analysis**: Leverages customer `age` into demographic brackets (Youth 18–29, Middle-Aged 30–49, Senior 50+) mapped across the 3 clusters.
+- **Clean Customer Directory**: View customers with whole-number annual income (no decimals), clean 10-digit phone numbers, and full-row multi-factor filtering & sorting (Customer ID, Name, Age, Income, Total Spent, Orders, Recency, Segment). Actions column is cleanly removed.
+- **Advanced Product Catalog Management**: Full-row multi-factor filtering & sorting (Product ID, Name, Category, Price, Stock Quantity, Stock Status) including a dedicated **Out of Stock** filter.
+- **Interactive Executive Dashboard**: 5 linked high-level KPI cards, interactive 2D Chart.js scatter plot (Annual Income vs Total Spending), highlighted Re-run K-Means trigger, and clickable segment cards linking directly to filtered customer lists.
+- **Dynamic Device Timezone Engine**: Automatically calculates Indian Standard Time (IST — Asia/Kolkata / UTC+5:30) timestamps for transaction records.
 
 ---
 
@@ -34,11 +40,11 @@ To access the Administrator Dashboard, navigate to `http://127.0.0.1:5000/admin/
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Python 3.x, Flask, PyMySQL (with SSL support)
-- **Database**: MySQL 8.x (Cloud MySQL on Aiven / Local MySQL)
-- **Machine Learning & Analytics**: Pandas, NumPy, Scikit-Learn, Faker
-- **Frontend**: HTML5, Vanilla CSS3, JavaScript (ES6+), Chart.js
-- **Timezone Engine**: Dynamic device system clock inspection with IST (`Asia/Kolkata`) calculation
+- **Backend**: Python 3.9+, Flask, Scikit-Learn, Pandas, NumPy, Joblib
+- **Database**: SQLite (default `instance/customer_segmentation.db`) / MySQL 8.x compatible
+- **Machine Learning**: K-Means Clustering (`n_clusters=3`), StandardScaler, Real-Time Online Inference
+- **Frontend**: HTML5, Vanilla CSS3 (Custom Design System with Light/Dark Mode), JavaScript (ES6+), Chart.js
+- **Timezone Engine**: Dynamic device system clock calculation with IST (`Asia/Kolkata`) conversion
 
 ---
 
@@ -49,28 +55,30 @@ customer-segmentation-system/
 ├── app/                     # Flask Application Source Code
 │   ├── static/              # CSS, JS, and UI static assets
 │   ├── templates/           # Jinja2 HTML Templates
+│   │   ├── admin/           # Admin Dashboard, Customers, Products, Purchases, Imports
+│   │   ├── customer/        # Storefront, Cart, Checkout
+│   │   └── base.html        # Main Layout & Global Theme Toggle
 │   ├── routes/              # Blueprint Handlers (main, customer, admin)
 │   ├── services/            # Business Logic & Analytical Services
-│   ├── db/                  # PyMySQL Connection & Query Handlers
-│   └── ml/                  # K-Means Machine Learning Pipeline
-├── generated_dataset/       # Output CSVs from Synthetic Dataset Generator
-│   ├── customers.csv        # 750 Customer Records
-│   ├── products.csv         # 20 Product Catalog Items
-│   ├── purchases.csv        # 7,500 Order Master Records
-│   ├── purchase_items.csv   # 13,057 Order Line Items
-│   ├── customer_features.csv# 750 Derived Customer Analytical Metrics
-│   └── dataset_summary.txt  # Dataset Analytical Summary Report
-├── scripts/                 # Utility & Dataset Generator Scripts
+│   ├── db/                  # SQLite & MySQL Connection & Compatibility Handlers
+│   └── ml/                  # K-Means Machine Learning Pipeline & Serialized Models
+├── generated_dataset/       # Initial Seed Datasets
+│   ├── customers.csv        # Customer Demographic Records
+│   ├── products.csv         # Product Catalog Items
+│   ├── purchases.csv        # Order Master Records
+│   └── purchase_items.csv   # Order Line Items
+├── instance/                # SQLite Database Storage
+│   └── customer_segmentation.db
+├── scripts/                 # Utility Scripts
 │   ├── generate_dataset.py  # Synthetic Dataset Generator Engine
-│   ├── import_to_db.py      # MySQL Bulk Importer Script
-│   └── init_db.py          # Database Schema Initializer
-├── sql/                     # Relational Schemas and Initial Seeds
-│   └── schema.sql           # MySQL Table Definitions & Indexes
-├── uploads/                 # Storage for imported CSV datasets
+│   ├── import_to_db.py      # Bulk Importer Script
+│   └── init_db.py          # Database Initializer
+├── sql/                     # Relational Schemas
+│   └── schema.sql           # Table Definitions & Indexes
 ├── config.py                # App Configuration & Environment Loader
 ├── app.py                   # Flask Application Entrypoint
 ├── requirements.txt         # Project Dependencies
-├── .env                     # Database & Environment Secrets
+├── .env                     # Environment Configuration
 └── README.md                # Project Documentation
 ```
 
@@ -80,58 +88,44 @@ customer-segmentation-system/
 
 ### 1. Prerequisites
 - Python 3.9+ installed
-- MySQL Server 8.0+ (or active Aiven Cloud MySQL connection)
 
 ### 2. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Initialize Database & Import Data
-
-1. **Configure Environment Variables**: Ensure your `.env` contains valid MySQL credentials:
-   ```env
-   DB_HOST=mysql-10da54c1-customer-segmentation.j.aivencloud.com
-   DB_PORT=21978
-   DB_USER=avnadmin
-   DB_PASSWORD=YOUR_PASSWORD
-   DB_NAME=customer_segmentation_db
-   DB_SSL=true
-   ```
-
-2. **Initialize Database Tables**:
-   ```bash
-   python scripts/init_db.py
-   ```
-
-3. **Generate Synthetic Dataset (Optional)**:
-   ```bash
-   python scripts/generate_dataset.py
-   ```
-
-4. **Bulk Import Data into MySQL**:
-   ```bash
-   python scripts/import_to_db.py
-   ```
-
-### 4. Run the Application
+### 3. Run the Application
 ```bash
 python app.py
 ```
+*Note: On initial startup, the application automatically verifies if SQLite tables and seed data exist. If not, it self-seeds the database and fits the initial K-Means model in seconds.*
+
 Open **[http://127.0.0.1:5000](http://127.0.0.1:5000)** in your browser.
 
 ---
 
-## 📊 Database Entities & Schema
+## 📊 Dashboard & Features Highlights
 
-- **`customers`**: Customer demographics (`customer_id`, `name`, `email`, `phone`, `income`, `age`, `gender`, `city`, `created_at`)
-- **`products`**: Item catalog (`product_id`, `name`, `category`, `price`, `stock_quantity`, `status`, `description`)
-- **`purchases`**: Transaction records (`purchase_id`, `customer_id`, `total_amount`, `status`, `purchase_date`)
-- **`purchase_items`**: Itemized order lines (`item_id`, `purchase_id`, `product_id`, `quantity`, `unit_price`, `subtotal`)
-- **`admins`**: Secured administrator accounts (`admin_id`, `username`, `password_hash`, `email`)
-- **`clusters`**: K-Means segmentation results (`cluster_id`, `customer_id`, `cluster_label`, `cluster_name`, `annual_income`, `total_spending`, `purchase_frequency`, `algorithm`)
+### 1. Five Core Metric Cards
+The admin dashboard highlights 5 essential metrics with direct navigational deep-links:
+1. **Registered Customers** ➔ Links directly to `/admin/customers`
+2. **Products in Catalog** ➔ Links directly to `/admin/products`
+3. **Out-of-Stock Products** ➔ Links directly to `/admin/products?stock_status=out_of_stock`
+4. **Total Orders Placed** ➔ Links directly to `/admin/purchases`
+5. **Customer Segments** ➔ Smooth scrolls directly to the Customer Segmentation overview
+
+### 2. Customer Segmentation (3 Clusters)
+- **High Paying Customer**: High annual income and high lifetime spending.
+- **Average Customer**: Moderate income with dependable order frequency.
+- **Budget Customer**: Value-oriented customers with lower purchase amounts.
+- Each cluster card displays customer count, percentage share, average spending, average income, and Age demographic breakdown (Youth, Middle-Aged, Senior).
+- Clicking any cluster card instantly filters the customer list by that segment (`/admin/customers?segment=...`).
+
+### 3. Customer & Product Multi-Factor Filtering
+- **Customer List**: Independent dropdown filters for Customer ID, Customer Name, Age, Annual Income, Total Spent, Total Orders, Recency, and Segment. Default order is High → Low.
+- **Product List**: Independent dropdown filters for Product ID, Product Name, Category, Price, Stock Quantity, and Stock Status (`All`, `In Stock`, `Out of Stock`).
 
 ---
 
 ## 📄 License
-Educational / Open Source DBMS & ML Project.
+Educational / Open Source Machine Learning & Data Science Project.

@@ -4,6 +4,7 @@ import re
 import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config import Config
 from app.db.connection import get_db_connection
 
 def parse_id(val):
@@ -27,31 +28,46 @@ def import_data():
             print(f"Error: Missing CSV file {path}. Run scripts/generate_dataset.py first.")
             return
 
-    print("Connecting to MySQL database...")
+    db_engine = getattr(Config, 'DB_TYPE', 'sqlite')
+    print(f"Connecting to database ({db_engine.upper()})...")
     conn = get_db_connection(with_database=True)
     cursor = conn.cursor()
     
-    # 1. Update table schemas if needed for city & status
-    try:
-        cursor.execute("ALTER TABLE customers ADD COLUMN city VARCHAR(50) DEFAULT NULL AFTER gender;")
-    except Exception:
-        pass
-    try:
-        cursor.execute("ALTER TABLE customers ADD COLUMN status VARCHAR(20) DEFAULT 'Active' AFTER city;")
-    except Exception:
-        pass
-    try:
-        cursor.execute("ALTER TABLE products ADD COLUMN status VARCHAR(20) DEFAULT 'Active' AFTER stock_quantity;")
-    except Exception:
-        pass
+    if db_engine != 'sqlite':
+        try:
+            cursor.execute("ALTER TABLE customers ADD COLUMN city VARCHAR(50) DEFAULT NULL AFTER gender;")
+        except Exception:
+            pass
+        try:
+            cursor.execute("ALTER TABLE customers ADD COLUMN status VARCHAR(20) DEFAULT 'Active' AFTER city;")
+        except Exception:
+            pass
+        try:
+            cursor.execute("ALTER TABLE products ADD COLUMN status VARCHAR(20) DEFAULT 'Active' AFTER stock_quantity;")
+        except Exception:
+            pass
 
-    print("Truncating existing table data...")
-    cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
-    cursor.execute("TRUNCATE TABLE purchase_items;")
-    cursor.execute("TRUNCATE TABLE purchases;")
-    cursor.execute("TRUNCATE TABLE products;")
-    cursor.execute("TRUNCATE TABLE customers;")
-    cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
+    print("Clearing existing table data...")
+    if db_engine == 'sqlite':
+        try:
+            cursor.execute("PRAGMA foreign_keys = OFF;")
+        except Exception:
+            pass
+        cursor.execute("DELETE FROM purchase_items;")
+        cursor.execute("DELETE FROM purchases;")
+        cursor.execute("DELETE FROM products;")
+        cursor.execute("DELETE FROM customers;")
+        try:
+            cursor.execute("PRAGMA foreign_keys = ON;")
+        except Exception:
+            pass
+    else:
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+        cursor.execute("TRUNCATE TABLE purchase_items;")
+        cursor.execute("TRUNCATE TABLE purchases;")
+        cursor.execute("TRUNCATE TABLE products;")
+        cursor.execute("TRUNCATE TABLE customers;")
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
     conn.commit()
 
     # 2. Import Products
@@ -79,12 +95,18 @@ def import_data():
     print(f"Importing {len(df_cust)} customers...")
     cust_tuples = []
     for _, row in df_cust.iterrows():
+        raw_phone = str(row["phone"]).strip().lstrip('+')
+        if len(raw_phone) == 12 and raw_phone.startswith('91'):
+            phone = raw_phone[2:]
+        else:
+            phone = raw_phone
+        income_val = round(float(row["annual_income"])) if pd.notna(row["annual_income"]) else None
         cust_tuples.append((
             parse_id(row["customer_id"]),
             row["name"],
             row["email"],
-            row["phone"],
-            float(row["annual_income"]),
+            phone,
+            income_val,
             int(row["age"]),
             row["gender"],
             row["city"],
@@ -110,7 +132,6 @@ def import_data():
             str(row["purchase_date"])
         ))
     
-    # Insert in batches of 1,000
     batch_size = 1000
     for i in range(0, len(pur_tuples), batch_size):
         cursor.executemany("""
@@ -144,14 +165,14 @@ def import_data():
     from werkzeug.security import generate_password_hash
     default_admin_hash = generate_password_hash("admin123")
     cursor.execute("""
-        INSERT IGNORE INTO admins (admin_id, username, password_hash, email)
+        INSERT OR IGNORE INTO admins (admin_id, username, password_hash, email)
         VALUES (1, 'admin', %s, 'admin@example.com');
     """, (default_admin_hash,))
     conn.commit()
 
     # 7. Verification Summary
     print("\n" + "="*50)
-    print("     MYSQL DATABASE IMPORT SUMMARY REPORT")
+    print(f"     {db_engine.upper()} DATABASE IMPORT SUMMARY REPORT")
     print("="*50)
     
     counts = {}
@@ -160,13 +181,13 @@ def import_data():
         res = cursor.fetchone()
         counts[table] = res["cnt"]
         
-    print(f"Products in MySQL       : {counts['products']:>6} (CSV: {len(df_prod)})")
-    print(f"Customers in MySQL      : {counts['customers']:>6} (CSV: {len(df_cust)})")
-    print(f"Purchases in MySQL      : {counts['purchases']:>6} (CSV: {len(df_pur)})")
-    print(f"Purchase Items in MySQL : {counts['purchase_items']:>6} (CSV: {len(df_items)})")
-    print(f"Admins in MySQL         : {counts['admins']:>6}")
+    print(f"Products in DB       : {counts['products']:>6} (CSV: {len(df_prod)})")
+    print(f"Customers in DB      : {counts['customers']:>6} (CSV: {len(df_cust)})")
+    print(f"Purchases in DB      : {counts['purchases']:>6} (CSV: {len(df_pur)})")
+    print(f"Purchase Items in DB : {counts['purchase_items']:>6} (CSV: {len(df_items)})")
+    print(f"Admins in DB         : {counts['admins']:>6}")
     print("="*50)
-    print("SUCCESS: All generated dataset files imported directly into online MySQL!")
+    print(f"SUCCESS: All generated dataset files imported directly into {db_engine.upper()}!")
     print("="*50 + "\n")
     
     conn.close()

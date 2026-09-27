@@ -8,9 +8,10 @@ CUSTOMER_SORT_COLUMNS = {
     'name':        'c.name',
     'phone':       'c.phone',
     'income':      'c.income',
+    'age':         'c.age',
     'order_count': 'order_count',
     'total_spent': 'total_spent',
-    'segment':     'cl.cluster_name',
+    'segment':     'cl.cluster_label',
     'status':      'c.status'
 }
 
@@ -38,6 +39,7 @@ def login():
         if admin and check_password_hash(admin['password_hash'], password):
             session['admin_id'] = admin['admin_id']
             session['admin_user'] = admin['username']
+            session['admin_username'] = admin['username']
             flash(f"Welcome back, {admin['username']}!", "success")
             return redirect(url_for('admin.dashboard'))
         else:
@@ -82,18 +84,13 @@ def dashboard():
     total_sales     = float(metrics.get('total_sales', 0.0) or 0.0)
     cluster_count   = metrics.get('cluster_count', 0)
 
-    # Cluster summary query (only executed if clusters exist)
-    cluster_summary = []
-    if cluster_count > 0:
-        cluster_summary = execute_query("""
-            SELECT cluster_label, cluster_name,
-                   COUNT(customer_id) as num_customers,
-                   AVG(annual_income) as avg_income,
-                   AVG(total_spending) as avg_spending
-            FROM clusters
-            GROUP BY cluster_label, cluster_name
-            ORDER BY cluster_label
-        """, fetch_all=True) or []
+    import json
+    from app.ml.clustering import get_dashboard_ml_data
+    ml_data = get_dashboard_ml_data()
+    cluster_summary = ml_data['cluster_summary']
+    scatter_data_json = json.dumps(ml_data['scatter_data'])
+    elbow_data_json = json.dumps(ml_data['elbow_data'])
+    strategies = ml_data['strategies']
 
     return render_template(
         'admin/dashboard.html',
@@ -105,8 +102,24 @@ def dashboard():
         order_count=order_count,
         total_sales=total_sales,
         cluster_count=cluster_count,
-        cluster_summary=cluster_summary
+        cluster_summary=cluster_summary,
+        scatter_data_json=scatter_data_json,
+        elbow_data_json=elbow_data_json,
+        strategies=strategies
     )
+
+
+@admin_bp.route('/recluster', methods=['POST', 'GET'])
+def recluster():
+    if 'admin_id' not in session:
+        return redirect(url_for('admin.login'))
+    from app.ml.clustering import train_kmeans_model
+    success, summary = train_kmeans_model(save=True)
+    if success:
+        flash(f"K-Means clustering completed! {summary.get('total_customers', 0)} customers segmented into 3 clusters.", "success")
+    else:
+        flash(f"Error training clustering model: {summary}", "danger")
+    return redirect(url_for('admin.dashboard'))
 
 
 # ── Customer Management (with sorting & pagination) ──────────────────────
@@ -116,27 +129,46 @@ def customers():
     if 'admin_id' not in session:
         return redirect(url_for('admin.login'))
 
-    sort_by  = request.args.get('sort_by', 'customer_id')
-    sort_dir = request.args.get('sort_dir', 'asc')
+    sort_by  = request.args.get('sort_by', 'total_spent')
+    sort_dir = request.args.get('sort_dir', 'desc')
     page     = request.args.get('page', 1, type=int)
+    segment  = request.args.get('segment', '').strip()
+
     if page < 1:
         page = 1
     per_page = 30
 
     if sort_by not in CUSTOMER_SORT_COLUMNS:
-        sort_by = 'customer_id'
+        sort_by = 'total_spent'
     if sort_dir not in ('asc', 'desc'):
-        sort_dir = 'asc'
+        sort_dir = 'desc'
 
     sql_col = CUSTOMER_SORT_COLUMNS[sort_by]
     sql_dir = 'ASC' if sort_dir == 'asc' else 'DESC'
+
+    where_clauses = []
+    where_params = []
+    if segment:
+        where_clauses.append("cl.cluster_name = %s")
+        where_params.append(segment)
+
+    where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
 
     conn = None
     try:
         conn = get_db_connection(with_database=True)
         with conn.cursor() as cursor:
             # 1. Total count
-            cursor.execute("SELECT COUNT(*) as count FROM customers")
+            count_query = f"""
+                SELECT COUNT(DISTINCT c.customer_id) as count 
+                FROM customers c
+                LEFT JOIN clusters cl ON c.customer_id = cl.customer_id
+                {where_sql}
+            """
+            if where_params:
+                cursor.execute(count_query, tuple(where_params))
+            else:
+                cursor.execute(count_query)
             total_res = cursor.fetchone()
             total_customers = total_res['count'] if total_res and total_res['count'] else 0
             total_pages = max(1, (total_customers + per_page - 1) // per_page)
@@ -146,7 +178,7 @@ def customers():
             offset = (page - 1) * per_page
 
             # 2. Paginated customers data
-            cursor.execute(f"""
+            data_query = f"""
                 SELECT c.*,
                        COALESCE(COUNT(DISTINCT p.purchase_id), 0) as order_count,
                        COALESCE(SUM(p.total_amount), 0)           as total_spent,
@@ -155,10 +187,12 @@ def customers():
                 FROM customers c
                 LEFT JOIN purchases p  ON c.customer_id = p.customer_id
                 LEFT JOIN clusters  cl ON c.customer_id = cl.customer_id
+                {where_sql}
                 GROUP BY c.customer_id, cl.cluster_label, cl.cluster_name
                 ORDER BY {sql_col} {sql_dir}
                 LIMIT %s OFFSET %s
-            """, (per_page, offset))
+            """
+            cursor.execute(data_query, tuple(where_params + [per_page, offset]))
             customers_list = cursor.fetchall() or []
     except Exception as e:
         customers_list = []
@@ -173,6 +207,7 @@ def customers():
         customers=customers_list,
         sort_by=sort_by,
         sort_dir=sort_dir,
+        segment=segment,
         page=page,
         total_pages=total_pages,
         total_customers=total_customers,
@@ -186,15 +221,16 @@ def toggle_customer_status(customer_id):
         return redirect(url_for('admin.login'))
 
     page = request.args.get('page', 1, type=int)
-    sort_by = request.args.get('sort_by', 'customer_id')
-    sort_dir = request.args.get('sort_dir', 'asc')
+    sort_by = request.args.get('sort_by', 'total_spent')
+    sort_dir = request.args.get('sort_dir', 'desc')
+    segment = request.args.get('segment', '').strip()
 
     cust = execute_query("SELECT status FROM customers WHERE customer_id = %s", (customer_id,), fetch_one=True)
     if cust:
         new_status = 'Inactive' if cust.get('status') == 'Active' else 'Active'
         execute_query("UPDATE customers SET status = %s WHERE customer_id = %s", (new_status, customer_id), commit=True)
         flash(f"Customer #{customer_id} status updated to {new_status}.", "info")
-    return redirect(url_for('admin.customers', page=page, sort_by=sort_by, sort_dir=sort_dir))
+    return redirect(url_for('admin.customers', page=page, sort_by=sort_by, sort_dir=sort_dir, segment=segment))
 
 
 @admin_bp.route('/customers/delete/<int:customer_id>', methods=['POST'])
@@ -245,26 +281,58 @@ def products():
         flash(f"Product '{name}' added successfully!", "success")
         return redirect(url_for('admin.products'))
 
-    sort_by = request.args.get('sort_by', 'id_asc').strip()
+    sort_by      = request.args.get('sort_by', 'product_id').strip()
+    sort_dir     = request.args.get('sort_dir', 'desc').strip()
+    stock_status = request.args.get('stock_status', '').strip().lower()
+    category     = request.args.get('category', '').strip()
 
-    if sort_by == 'id_desc':
-        sql_order = "product_id DESC"
-    elif sort_by == 'id_asc':
-        sql_order = "product_id ASC"
-    elif sort_by == 'name_asc':
-        sql_order = "name ASC"
-    elif sort_by == 'category_asc':
-        sql_order = "category ASC, name ASC"
-    elif sort_by == 'price_desc':
-        sql_order = "price DESC"
-    elif sort_by == 'price_asc':
-        sql_order = "price ASC"
-    else:
-        sort_by = 'id_asc'
-        sql_order = "product_id ASC"
+    PRODUCT_SORT_COLUMNS = {
+        'product_id':     'product_id',
+        'id':             'product_id',
+        'name':           'name',
+        'category':       'category',
+        'price':          'price',
+        'stock_quantity': 'stock_quantity',
+        'stock':          'stock_quantity',
+        'status':         'status'
+    }
+    if sort_by not in PRODUCT_SORT_COLUMNS:
+        sort_by = 'product_id'
+    if sort_dir not in ('asc', 'desc'):
+        sort_dir = 'desc'
 
-    products_list = execute_query(f"SELECT * FROM products ORDER BY {sql_order}", fetch_all=True) or []
-    return render_template('admin/products.html', products=products_list, sort_by=sort_by)
+    sql_col = PRODUCT_SORT_COLUMNS[sort_by]
+    sql_dir = 'ASC' if sort_dir == 'asc' else 'DESC'
+
+    where_clauses = []
+    params = []
+
+    if stock_status == 'out_of_stock':
+        where_clauses.append("(status = 'Out of Stock' OR stock_quantity <= 0)")
+    elif stock_status == 'in_stock':
+        where_clauses.append("(status = 'Active' AND stock_quantity > 0)")
+
+    if category:
+        where_clauses.append("category = %s")
+        params.append(category)
+
+    where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+
+    query = f"SELECT * FROM products {where_sql} ORDER BY {sql_col} {sql_dir}"
+    products_list = execute_query(query, tuple(params) if params else None, fetch_all=True) or []
+
+    cat_rows = execute_query("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != '' ORDER BY category", fetch_all=True) or []
+    categories = [r['category'] for r in cat_rows]
+
+    return render_template(
+        'admin/products.html',
+        products=products_list,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
+        stock_status=stock_status,
+        category=category,
+        categories=categories
+    )
 
 
 @admin_bp.route('/products/get/<int:product_id>')

@@ -59,10 +59,10 @@
     </a>
 </div>
 
-<!-- ── 8 Metric Cards ─────────────────────────────────────────────── -->
-<div class="metrics-grid">
-    <!-- Total Customers -->
-    <div class="metric-card">
+<!-- ── 5 Key Metric Cards (Linked to Respective Views) ─────────────── -->
+<div class="metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+    <!-- 1. Registered Customers -->
+    <a href="{{ url_for('admin.customers') }}" class="metric-card" style="text-decoration: none; color: inherit; display: block; cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease;" title="View all Registered Customers">
         <div class="metric-card-top">
             <div class="metric-icon metric-icon-primary">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -72,44 +72,17 @@
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
             </div>
-            <span class="metric-trend trend-neu">Total</span>
+            <span class="metric-trend trend-neu">Customers</span>
         </div>
         <div class="metric-value">{{ cust_total }}</div>
-        <div class="metric-label">Registered Customers</div>
-    </div>
-
-    <!-- Active Customers -->
-    <div class="metric-card">
-        <div class="metric-card-top">
-            <div class="metric-icon metric-icon-success">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </div>
-            <span class="metric-trend trend-up">Active</span>
+        <div class="metric-label d-flex justify-between align-center">
+            <span>Registered Customers</span>
+            <span style="font-size: 0.75rem; color: var(--primary); font-weight: 600;">&rarr;</span>
         </div>
-        <div class="metric-value">{{ cust_active }}</div>
-        <div class="metric-label">Active Customers</div>
-    </div>
+    </a>
 
-    <!-- Inactive Customers -->
-    <div class="metric-card">
-        <div class="metric-card-top">
-            <div class="metric-icon metric-icon-warning">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-            </div>
-            <span class="metric-trend trend-down">Inactive</span>
-        </div>
-        <div class="metric-value">{{ cust_inactive }}</div>
-        <div class="metric-label">Inactive Customers</div>
-    </div>
-
-    <!-- Total Products -->
-    <div class="metric-card">
+    <!-- 2. Products in Catalog -->
+    <a href="{{ url_for('admin.products') }}" class="metric-card" style="text-decoration: none; color: inherit; display: block; cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease;" title="View Product Catalog">
         <div class="metric-card-top">
             <div class="metric-icon metric-icon-accent">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -119,11 +92,14 @@
             <span class="metric-trend trend-neu">Catalog</span>
         </div>
         <div class="metric-value">{{ prod_total }}</div>
-        <div class="metric-label">Products in Catalog</div>
-    </div>
+        <div class="metric-label d-flex justify-between align-center">
+            <span>Products in Catalog</span>
+            <span style="font-size: 0.75rem; color: var(--primary); font-weight: 600;">&rarr;</span>
+        </div>
+    </a>
 
-    <!-- Out of Stock -->
-    <div class="metric-card">
+    <!-- 3. Out-of-Stock Products -->
+    <a href="{{ url_for('admin.products', stock_status='out_of_stock') }}" class="metric-card" style="text-decoration: none; color: inherit; display: block; cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease;" title="Check Stock Alerts in Catalog">
         <div class="metric-card-top">
             <div class="metric-icon metric-icon-danger">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -135,11 +111,14 @@
             <span class="metric-trend trend-down">Stock Alert</span>
         </div>
         <div class="metric-value">{{ prod_outofstock }}</div>
-        <div class="metric-label">Out-of-Stock Products</div>
-    </div>
+        <div class="metric-label d-flex justify-between align-center">
+            <span>Out-of-Stock Products</span>
+            <span style="font-size: 0.75rem; color: var(--danger); font-weight: 600;">&rarr;</span>
+        </div>
+    </a>
 
-    <!-- Total Purchases -->
-    <div class="metric-card">
+    <!-- 4. Total Orders Placed -->
+    <a href="{{ url_for('admin.purchases') }}" class="metric-card" style="text-decoration: none; color: inherit; display: block; cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease;" title="View all Purchase Orders">
         <div class="metric-card-top">
             <div class="metric-icon metric-icon-primary">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -151,26 +130,14 @@
             <span class="metric-trend trend-up">Orders</span>
         </div>
         <div class="metric-value">{{ order_count }}</div>
-        <div class="metric-label">Total Orders Placed</div>
-    </div>
-
-    <!-- Gross Revenue -->
-    <div class="metric-card">
-        <div class="metric-card-top">
-            <div class="metric-icon metric-icon-success">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="1" x2="12" y2="23"></line>
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                </svg>
-            </div>
-            <span class="metric-trend trend-up">Revenue</span>
+        <div class="metric-label d-flex justify-between align-center">
+            <span>Total Orders Placed</span>
+            <span style="font-size: 0.75rem; color: var(--primary); font-weight: 600;">&rarr;</span>
         </div>
-        <div class="metric-value" style="font-size:1.4rem;">{{ total_sales | inr }}</div>
-        <div class="metric-label">Gross Revenue (₹)</div>
-    </div>
+    </a>
 
-    <!-- Customer Segments -->
-    <div class="metric-card">
+    <!-- 5. Customer Segments -->
+    <a href="#customer-segmentation-section" class="metric-card" style="text-decoration: none; color: inherit; display: block; cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease;" title="Jump to Customer Segmentation & Demographics">
         <div class="metric-card-top">
             <div class="metric-icon metric-icon-accent">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -182,8 +149,261 @@
             <span class="metric-trend trend-neu">K-Means</span>
         </div>
         <div class="metric-value">{{ cluster_count }}</div>
-        <div class="metric-label">Customer Segments</div>
+        <div class="metric-label d-flex justify-between align-center">
+            <span>Customer Segments</span>
+            <span style="font-size: 0.75rem; color: var(--accent); font-weight: 600;">&darr;</span>
+        </div>
+    </a>
+</div>
+
+<!-- ── Interactive K-Means Visualizations (Chart.js) ──────────────────────── -->
+<!-- ── Interactive K-Means Scatter Plot (Chart.js) ───────────────────────── -->
+<div class="card mt-4 mb-4">
+    <div class="card-header d-flex justify-between align-center flex-wrap gap-2">
+        <div>
+            <h3 class="section-title mb-0" style="font-size:1.05rem;">
+                Annual Income vs. Lifetime Spending
+            </h3>
+            <p class="text-muted text-xs mt-1 mb-0">Interactive 2D spatial clustering distribution with calculated cluster centroids.</p>
+        </div>
+        <span class="badge badge-category">Scatter Plot</span>
+    </div>
+    <div class="card-body" style="position: relative; height: 380px;">
+        <canvas id="scatterChart"></canvas>
+    </div>
+    <div class="card-footer d-flex justify-between align-center text-xs text-muted flex-wrap gap-2" style="border-top: 1px solid var(--border); padding: 0.75rem 1.25rem;">
+        <span>● Budget Customer (Amber)</span>
+        <span>● Average Customer (Indigo)</span>
+        <span>● High Paying Customer (Green)</span>
     </div>
 </div>
 
+<!-- ── Customer Segmentation (K-Means Clustering) Cards ──────────────────── -->
+<div class="card mt-4 mb-4" id="customer-segmentation-section">
+    <div class="card-header d-flex justify-between align-center flex-wrap gap-2">
+        <div>
+            <h2 class="section-title mb-0 d-flex align-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                    <polyline points="2 17 12 22 22 17"></polyline>
+                    <polyline points="2 12 12 17 22 12"></polyline>
+                </svg>
+                Customer Segmentation Overview &amp; Age Demographics
+            </h2>
+            <p class="text-muted text-sm mt-1 mb-0">Live 3-cluster behavioral segmentation based on customer lifetime spending, income, and order history.</p>
+        </div>
+        <div class="d-flex align-center gap-2">
+            <!-- Enclosed Highlighted Re-run K-Means Box -->
+            <div style="background: rgba(99, 102, 241, 0.08); border: 2px solid #6366f1; border-radius: 8px; padding: 3px; display: inline-flex; align-items: center; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);">
+                <a href="{{ url_for('admin.recluster') }}" class="btn btn-sm d-flex align-center gap-1"
+                   style="background: #4f46e5; color: #ffffff; font-weight: 700; border-radius: 6px; padding: 0.45rem 0.95rem; border: none; text-decoration: none;"
+                   onclick="return confirm('Re-run K-Means clustering algorithm across all database customers?');">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    Re-run K-Means
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        {% if cluster_summary and cluster_summary | length > 0 %}
+            <div class="grid grid-3 gap-3">
+                {% for cs in cluster_summary %}
+                    {% set pct = ((cs.num_customers / cust_total) * 100) | round(1) if cust_total > 0 else 0 %}
+                    {% if cs.cluster_name == 'High Paying Customer' %}
+                        {% set card_cls = 'cluster-card-high' %}
+                        {% set badge_cls = 'cluster-badge-high' %}
+                    {% elif cs.cluster_name == 'Average Customer' %}
+                        {% set card_cls = 'cluster-card-average' %}
+                        {% set badge_cls = 'cluster-badge-average' %}
+                    {% else %}
+                        {% set card_cls = 'cluster-card-budget' %}
+                        {% set badge_cls = 'cluster-badge-budget' %}
+                    {% endif %}
+
+                    <!-- Clickable Cluster Card Redirecting to Customers Page with sorting applied -->
+                    <a href="{{ url_for('admin.customers', segment=cs.cluster_name, sort_by='total_spent', sort_dir='desc') }}"
+                       class="card cluster-card {{ card_cls }}"
+                       style="text-decoration: none; color: inherit; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease;"
+                       title="Click to view all {{ cs.cluster_name }}s in Customer Directory">
+                        <div class="d-flex justify-between align-center mb-2">
+                            <span class="badge {{ badge_cls }}">
+                                {% if cs.cluster_name == 'High Paying Customer' %}★ {{ cs.cluster_name }}{% else %}{{ cs.cluster_name }}{% endif %}
+                            </span>
+                            <span class="badge badge-category">{{ pct }}% of total</span>
+                        </div>
+
+                        <div class="d-flex align-baseline gap-2 mb-3">
+                            <span style="font-size: 1.75rem; font-weight: 800; font-family: var(--font-mono);">{{ cs.num_customers }}</span>
+                            <span class="text-muted text-sm">customers</span>
+                        </div>
+
+                        <div style="font-size: 0.85rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;" class="d-flex flex-column gap-2">
+                            <div class="d-flex justify-between align-center">
+                                <span class="text-muted">Avg Lifetime Spending:</span>
+                                <strong class="font-mono">{{ cs.avg_spending | inr }}</strong>
+                            </div>
+                            <div class="d-flex justify-between align-center">
+                                <span class="text-muted">Avg Annual Income:</span>
+                                <strong class="font-mono">{{ cs.avg_income | inr }}</strong>
+                            </div>
+                            <div class="d-flex justify-between align-center">
+                                <span class="text-muted">Average Age:</span>
+                                <span class="badge badge-category">{{ cs.avg_age or '—' }} yrs</span>
+                            </div>
+                        </div>
+
+                        <!-- Age Sub-Segment Breakdown (Fixed Distinct Pill Grid) -->
+                        <div style="background: rgba(0,0,0,0.025); border-radius: 8px; padding: 0.65rem 0.75rem; margin-top: 0.75rem; border: 1px dashed var(--border-color, #e2e8f0);">
+                            <div class="text-muted text-xs fw-600 mb-2" style="letter-spacing: 0.02em;">Age Factor Sub-Segments:</div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; text-align: center;">
+                                <div style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; padding: 0.35rem 0.2rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                    <div class="text-muted" style="font-size: 0.68rem; font-weight: 600;">18–25</div>
+                                    <div style="font-weight: 800; font-size: 0.95rem; font-family: var(--font-mono); color: var(--text);">{{ cs.young_cnt or 0 }}</div>
+                                </div>
+                                <div style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; padding: 0.35rem 0.2rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                    <div class="text-muted" style="font-size: 0.68rem; font-weight: 600;">26–45</div>
+                                    <div style="font-weight: 800; font-size: 0.95rem; font-family: var(--font-mono); color: var(--text);">{{ cs.adult_cnt or 0 }}</div>
+                                </div>
+                                <div style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; padding: 0.35rem 0.2rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                    <div class="text-muted" style="font-size: 0.68rem; font-weight: 600;">46+</div>
+                                    <div style="font-weight: 800; font-size: 0.95rem; font-family: var(--font-mono); color: var(--text);">{{ cs.mature_cnt or 0 }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-muted text-xs mt-3 mb-2" style="line-height: 1.4;">
+                            {% if cs.cluster_name == 'High Paying Customer' %}
+                                Premium buyers driving the highest gross margins and order volume.
+                            {% elif cs.cluster_name == 'Average Customer' %}
+                                Mid-tier core customers with consistent purchase frequency and stable order sizes.
+                            {% else %}
+                                Price-sensitive shoppers prioritizing value and standard essentials.
+                            {% endif %}
+                        </p>
+
+                        <!-- Subtle Click Prompt -->
+                        <div class="mt-auto pt-2 d-flex justify-between align-center text-xs fw-600" style="border-top: 1px solid var(--border-color); color: var(--primary);">
+                            <span>View sorted customers &rarr;</span>
+                            <span class="badge badge-category" style="font-size: 0.72rem;">{{ cs.num_customers }}</span>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state py-4 text-center">
+                <p class="text-muted mb-2">No customer clusters generated yet.</p>
+                <a href="{{ url_for('admin.recluster') }}" class="btn btn-primary btn-sm">
+                    Run K-Means (3 Clusters) Now
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rawScatter = {{ scatter_data_json | safe }};
+
+    // Format numbers as INR string for tooltips
+    function fmtInr(num) {
+        return '₹' + Math.round(num).toLocaleString('en-IN');
+    }
+
+    // ── Scatter Chart: Income vs Spending (Centroids Removed) ─────────────
+    const scatterCtx = document.getElementById('scatterChart');
+    if (scatterCtx && rawScatter) {
+        new Chart(scatterCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: 'Budget Customer',
+                        data: rawScatter.budget || [],
+                        backgroundColor: 'rgba(245, 158, 11, 0.65)',
+                        borderColor: '#f59e0b',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Average Customer',
+                        data: rawScatter.average || [],
+                        backgroundColor: 'rgba(99, 102, 241, 0.75)',
+                        borderColor: '#6366f1',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'High Paying Customer',
+                        data: rawScatter.high || [],
+                        backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                        borderColor: '#10b981',
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            boxWidth: 12,
+                            font: { family: 'Inter', size: 11 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                const pt = ctx.raw;
+                                return `${pt.name || 'Customer'} (Age: ${pt.age || '—'}) | Inc: ${fmtInr(pt.x)} | Spend: ${fmtInr(pt.y)} | Orders: ${pt.orders || 1}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Annual Income (₹)',
+                            font: { family: 'Outfit', size: 12, weight: '600' }
+                        },
+                        ticks: {
+                            callback: function(val) {
+                                return '₹' + (val / 100000).toFixed(0) + 'L';
+                            }
+                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Lifetime Spending (₹)',
+                            font: { family: 'Outfit', size: 12, weight: '600' }
+                        },
+                        ticks: {
+                            callback: function(val) {
+                                return '₹' + (val / 100000).toFixed(1) + 'L';
+                            }
+                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

@@ -88,7 +88,7 @@ def generate_name(gender):
 def generate_phone(idx):
     # Fictional non-real 10-digit phone number starting with 9876 range
     base = 9876000000 + idx
-    return f"+91{base}"
+    return f"{base}"
 
 def generate_email(name, idx):
     clean_name = "".join(e for e in name.lower() if e.isalnum())
