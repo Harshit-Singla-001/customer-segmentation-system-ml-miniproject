@@ -71,6 +71,37 @@ def format_ist(value, fmt="%d %b %Y, %I:%M %p"):
 
     return str(value)
 
+import threading
+
+def _run_warmup(app):
+    """
+    Background worker that runs immediately on server startup to preload
+    heavy ML dependencies, compile templates, and warm dashboard caches in RAM.
+    """
+    with app.app_context():
+        try:
+            from app.db.connection import ensure_db_indexes
+            ensure_db_indexes()
+
+            from app.ml.clustering import load_or_train_model, get_dashboard_ml_data
+            load_or_train_model()
+            get_dashboard_ml_data()
+
+            # Pre-compile Jinja templates for zero first-render latency
+            app.jinja_env.get_template('admin/dashboard.html')
+            app.jinja_env.get_template('admin/login.html')
+            app.jinja_env.get_template('admin/customers.html')
+            app.jinja_env.get_template('admin/products.html')
+            app.jinja_env.get_template('admin/purchases.html')
+
+            print("[WARMUP] Admin dashboard & ML components preloaded successfully in background.")
+        except Exception as e:
+            print(f"[WARMUP] Background preload note: {e}")
+
+def start_background_warmup(app):
+    t = threading.Thread(target=_run_warmup, args=(app,), daemon=True, name="AdminPreloadWorker")
+    t.start()
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
@@ -100,5 +131,8 @@ def create_app(config_class=Config):
                 check_and_auto_import_db()
             except Exception as e:
                 print(f"[AUTO-DB] Startup DB check info: {e}")
+
+        # Launch background preloading for admin dashboard
+        start_background_warmup(app)
 
     return app

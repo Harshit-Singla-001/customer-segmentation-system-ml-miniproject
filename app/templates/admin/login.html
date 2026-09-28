@@ -77,5 +77,18 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+// Proactively warm up dashboard cache and prefetch Chart.js while typing credentials
+(function() {
+    if (window.fetch) {
+        fetch('{{ url_for("admin.preload") }}').catch(function() {});
+    }
+    const prefetchChart = document.createElement('link');
+    prefetchChart.rel = 'prefetch';
+    prefetchChart.href = '{{ url_for("static", filename="js/chart.min.js") }}';
+    prefetchChart.as = 'script';
+    document.head.appendChild(prefetchChart);
+})();
+</script>
 </body>
 </html>

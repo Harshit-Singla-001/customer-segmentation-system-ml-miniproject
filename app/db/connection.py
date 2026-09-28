@@ -302,6 +302,35 @@ def is_sqlite_data_inserted():
         return False
 
 
+def ensure_db_indexes():
+    """
+    Ensures optimal B-tree indexes exist for high-speed dashboard,
+    customer, product, and clustering queries.
+    """
+    indexes = [
+        "CREATE INDEX IF NOT EXISTS idx_purchases_customer ON purchases(customer_id);",
+        "CREATE INDEX IF NOT EXISTS idx_purchase_items_purchase ON purchase_items(purchase_id);",
+        "CREATE INDEX IF NOT EXISTS idx_purchase_items_product ON purchase_items(product_id);",
+        "CREATE INDEX IF NOT EXISTS idx_clusters_customer ON clusters(customer_id);",
+        "CREATE INDEX IF NOT EXISTS idx_clusters_label ON clusters(cluster_label);",
+        "CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);",
+        "CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(status);",
+        "CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone);"
+    ]
+    try:
+        conn = get_db_connection(with_database=True)
+        with conn.cursor() as cursor:
+            for idx in indexes:
+                try:
+                    cursor.execute(idx)
+                except Exception:
+                    pass
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[DB] Index check note: {e}")
+
+
 def check_and_auto_import_db():
     """
     Checks if the database is already initialized and populated.
@@ -312,6 +341,7 @@ def check_and_auto_import_db():
     """
     if Config.DB_TYPE == 'sqlite':
         if is_sqlite_data_inserted():
+            ensure_db_indexes()
             try:
                 res = execute_query("SELECT COUNT(*) as cnt FROM clusters", fetch_one=True)
                 if not res or res.get('cnt', 0) == 0:

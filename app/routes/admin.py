@@ -55,6 +55,22 @@ def logout():
     return redirect(url_for('main.index'))
 
 
+@admin_bp.route('/preload', methods=['GET'])
+def preload():
+    """
+    Background preloader endpoint called asynchronously after user storefront loads.
+    Pre-warms ML models, verifies DB indexes, and warms dashboard cache in RAM
+    so that when the admin navigates to login/dashboard, everything renders instantaneously.
+    """
+    try:
+        from app.ml.clustering import load_or_train_model, get_dashboard_ml_data
+        load_or_train_model()
+        get_dashboard_ml_data()
+        return jsonify({"status": "ready", "cached": True})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 200
+
+
 # ── Dashboard ────────────────────────────────────────────────────────────
 
 @admin_bp.route('/dashboard')
@@ -88,8 +104,8 @@ def dashboard():
     from app.ml.clustering import get_dashboard_ml_data
     ml_data = get_dashboard_ml_data()
     cluster_summary = ml_data['cluster_summary']
-    scatter_data_json = json.dumps(ml_data['scatter_data'])
-    elbow_data_json = json.dumps(ml_data['elbow_data'])
+    scatter_data_json = ml_data.get('scatter_data_json') or json.dumps(ml_data['scatter_data'])
+    elbow_data_json = ml_data.get('elbow_data_json') or json.dumps(ml_data['elbow_data'])
     strategies = ml_data['strategies']
 
     return render_template(

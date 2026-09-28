@@ -7,13 +7,13 @@
 
 /* ── CSS Custom Properties ───────────────────────────────────────────── */
 :root {
-    /* Brand Palette */
-    --primary:        #4F46E5;
-    --primary-hover:  #4338CA;
-    --primary-light:  #EEF2FF;
-    --primary-glow:   rgba(79, 70, 229, 0.18);
-    --accent:         #06B6D4;
-    --accent-light:   rgba(6, 182, 212, 0.12);
+    /* Brand Palette - Deep Spruce Pine Teal (Custom Enterprise Palette) */
+    --primary:        #0F766E;
+    --primary-hover:  #115E59;
+    --primary-light:  #F0FDFA;
+    --primary-glow:   rgba(15, 118, 110, 0.20);
+    --accent:         #D97706;
+    --accent-light:   rgba(217, 119, 6, 0.12);
 
     /* Semantic */
     --success:        #10B981;
@@ -67,8 +67,8 @@
     --text-2:         #94A3B8;
     --text-3:         #4B5563;
     --border:         #1E293B;
-    --primary-light:  rgba(79, 70, 229, 0.15);
-    --primary-glow:   rgba(79, 70, 229, 0.25);
+    --primary-light:  rgba(15, 118, 110, 0.15);
+    --primary-glow:   rgba(15, 118, 110, 0.25);
     --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
     --shadow-md:  0 4px 12px rgba(0,0,0,0.5);
     --shadow-lg:  0 20px 40px rgba(0,0,0,0.6);
@@ -76,7 +76,10 @@
 
 /* ── Reset ───────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 85px;
+}
 
 body {
     font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
@@ -132,7 +135,7 @@ body {
 .brand-icon {
     width: 36px;
     height: 36px;
-    background: linear-gradient(135deg, var(--primary) 0%, #818CF8 100%);
+    background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
     border-radius: var(--r-md);
     display: flex;
     align-items: center;
@@ -274,11 +277,11 @@ body {
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    background: linear-gradient(135deg, #14b8a6, #0f766e);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.35);
     flex-shrink: 0;
     color: #ffffff !important;
 }
@@ -306,15 +309,15 @@ body {
     gap: 0.5rem;
     font-size: 0.85rem;
     font-weight: 700;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(79, 70, 229, 0.18));
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.12), rgba(15, 118, 110, 0.16));
     color: var(--primary);
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    border: 1px solid rgba(15, 118, 110, 0.3);
     padding: 0.4rem 1rem;
     border-radius: var(--r-full);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-bottom: 1rem;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 2px 8px rgba(15, 118, 110, 0.1);
 }
 
 .home-header h1 {
@@ -383,11 +386,11 @@ body {
     bottom: 2rem;
     right: 2rem;
     z-index: 999;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    background: linear-gradient(135deg, #14b8a6, #0f766e);
     color: #ffffff !important;
     padding: 0.75rem 1.25rem;
     border-radius: var(--r-full);
-    box-shadow: 0 10px 25px rgba(99, 102, 241, 0.45);
+    box-shadow: 0 10px 25px rgba(15, 118, 110, 0.45);
     display: flex;
     align-items: center;
     gap: 0.65rem;
@@ -400,13 +403,13 @@ body {
 
 .floating-cart-widget:hover {
     transform: translateY(-3px) scale(1.03);
-    box-shadow: 0 14px 30px rgba(99, 102, 241, 0.55);
+    box-shadow: 0 14px 30px rgba(15, 118, 110, 0.55);
     color: #ffffff !important;
 }
 
 .floating-cart-badge {
     background: #ffffff;
-    color: #4f46e5;
+    color: #0f766e;
     font-size: 0.8rem;
     font-weight: 800;
     padding: 0.15rem 0.55rem;
@@ -1201,7 +1204,7 @@ body {
 
 .login-logo {
     width: 54px; height: 54px;
-    background: linear-gradient(135deg, var(--primary) 0%, #818CF8 100%);
+    background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
     border-radius: var(--r-lg);
     display: flex;
     align-items: center;
@@ -1687,8 +1690,8 @@ thead th.sticky-col-right {
 }
 
 .cluster-card-average {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(99, 102, 241, 0.01));
-    border-top: 3px solid #6366f1;
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.05), rgba(2, 132, 199, 0.01));
+    border-top: 3px solid #0284c7;
 }
 
 .cluster-card-budget {
@@ -1705,9 +1708,9 @@ thead th.sticky-col-right {
 }
 
 .cluster-badge-average {
-    background: rgba(99, 102, 241, 0.15) !important;
-    color: #4338ca !important;
-    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+    background: rgba(2, 132, 199, 0.15) !important;
+    color: #0369a1 !important;
+    border: 1px solid rgba(2, 132, 199, 0.3) !important;
     font-size: 0.85rem !important;
     font-weight: 700 !important;
 }
@@ -1718,6 +1721,10 @@ thead th.sticky-col-right {
     border: 1px solid rgba(245, 158, 11, 0.3) !important;
     font-size: 0.85rem !important;
     font-weight: 700 !important;
+}
+
+#customer-segmentation-section {
+    scroll-margin-top: 85px;
 }
 
 

@@ -173,13 +173,13 @@
     </div>
     <div class="card-footer d-flex justify-between align-center text-xs text-muted flex-wrap gap-2" style="border-top: 1px solid var(--border); padding: 0.75rem 1.25rem;">
         <span>● Budget Customer (Amber)</span>
-        <span>● Average Customer (Indigo)</span>
+        <span>● Average Customer (Blue)</span>
         <span>● High Paying Customer (Green)</span>
     </div>
 </div>
 
 <!-- ── Customer Segmentation (K-Means Clustering) Cards ──────────────────── -->
-<div class="card mt-4 mb-4" id="customer-segmentation-section">
+<div class="card mt-4 mb-4" id="customer-segmentation-section" style="scroll-margin-top: 85px;">
     <div class="card-header d-flex justify-between align-center flex-wrap gap-2">
         <div>
             <h2 class="section-title mb-0 d-flex align-center gap-2">
@@ -194,9 +194,9 @@
         </div>
         <div class="d-flex align-center gap-2">
             <!-- Enclosed Highlighted Re-run K-Means Box -->
-            <div style="background: rgba(99, 102, 241, 0.08); border: 2px solid #6366f1; border-radius: 8px; padding: 3px; display: inline-flex; align-items: center; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);">
+            <div style="background: rgba(15, 118, 110, 0.08); border: 2px solid #0f766e; border-radius: 8px; padding: 3px; display: inline-flex; align-items: center; box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);">
                 <a href="{{ url_for('admin.recluster') }}" class="btn btn-sm d-flex align-center gap-1"
-                   style="background: #4f46e5; color: #ffffff; font-weight: 700; border-radius: 6px; padding: 0.45rem 0.95rem; border: none; text-decoration: none;"
+                   style="background: #0f766e; color: #ffffff; font-weight: 700; border-radius: 6px; padding: 0.45rem 0.95rem; border: none; text-decoration: none;"
                    onclick="return confirm('Re-run K-Means clustering algorithm across all database customers?');">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <polyline points="23 4 23 10 17 10"></polyline>
@@ -308,12 +308,22 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Fast Local Chart.js with CDN Fallback -->
+<script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+<script>
+if (typeof Chart === 'undefined') {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>');
+}
+</script>
+
+<script type="application/json" id="scatterData">
+{{ scatter_data_json | safe }}
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const rawScatter = {{ scatter_data_json | safe }};
+    const rawScatterEl = document.getElementById('scatterData');
+    const rawScatter = rawScatterEl ? JSON.parse(rawScatterEl.textContent) : null;
 
     // Format numbers as INR string for tooltips
     function fmtInr(num) {
@@ -338,8 +348,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     {
                         label: 'Average Customer',
                         data: rawScatter.average || [],
-                        backgroundColor: 'rgba(99, 102, 241, 0.75)',
-                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(2, 132, 199, 0.75)',
+                        borderColor: '#0284c7',
                         pointRadius: 4,
                         pointHoverRadius: 6
                     },

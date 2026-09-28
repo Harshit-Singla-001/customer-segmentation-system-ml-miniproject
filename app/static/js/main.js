@@ -8,23 +8,12 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // ── 1. Theme Switcher ────────────────────────────────────────────────
-    const themeToggleBtn = document.getElementById('themeToggle');
+    // ── 1. Default Clean Light Theme ─────────────────────────────────────
     const htmlElem = document.documentElement;
-
-    // Restore saved preference or fall back to system preference
-    const savedTheme = localStorage.getItem('theme')
-        || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    htmlElem.setAttribute('data-theme', savedTheme);
-
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', () => {
-            const current = htmlElem.getAttribute('data-theme');
-            const next = current === 'dark' ? 'light' : 'dark';
-            htmlElem.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-        });
-    }
+    htmlElem.setAttribute('data-theme', 'light');
+    try {
+        localStorage.removeItem('theme');
+    } catch (e) {}
 
     // ── 2. Product Catalog — Search + Category Filter ────────────────────
     const searchInput   = document.getElementById('productSearch');

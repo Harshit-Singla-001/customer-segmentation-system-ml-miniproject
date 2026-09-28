@@ -17,6 +17,15 @@ CLUSTER_NAMES = {
 FEATURE_COLUMNS = ['total_spent', 'income', 'order_count', 'avg_order_value']
 
 _CACHED_MODEL_BUNDLE = None
+_CACHED_DASHBOARD_ML_DATA = None
+
+def invalidate_dashboard_cache():
+    """
+    Clears the cached dashboard ML data so fresh metrics and scatter points
+    are recalculated whenever new transactions or re-clustering occurs.
+    """
+    global _CACHED_DASHBOARD_ML_DATA
+    _CACHED_DASHBOARD_ML_DATA = None
 
 def get_model_path():
     instance_dir = os.path.join(Config.BASE_DIR, 'instance')
@@ -152,6 +161,7 @@ def train_kmeans_model(save=True):
             'avg_income': round(float(sub['income'].mean()), 2) if len(sub) else 0.0
         }
 
+    invalidate_dashboard_cache()
     return True, summary
 
 
@@ -243,6 +253,7 @@ def classify_single_customer(customer_id):
     finally:
         conn.close()
 
+    invalidate_dashboard_cache()
     return cluster_label, cluster_name
 
 
@@ -304,11 +315,18 @@ CLUSTER_MARKETING_STRATEGIES = {
 }
 
 
-def get_dashboard_ml_data():
+def get_dashboard_ml_data(force_refresh=False):
     """
     Assembles comprehensive analytical payload for Chart.js visualizations
     and actionable marketing strategies on the Admin Dashboard.
+    Results are cached in memory for sub-millisecond response times.
     """
+    global _CACHED_DASHBOARD_ML_DATA
+    if _CACHED_DASHBOARD_ML_DATA is not None and not force_refresh:
+        return _CACHED_DASHBOARD_ML_DATA
+
+    import json
+
     # 1. Cluster Summary with Age Breakdown
     summary_query = """
         SELECT cl.cluster_label, cl.cluster_name,
@@ -375,10 +393,14 @@ def get_dashboard_ml_data():
         "optimal_k": 3
     }
 
-    return {
+    payload = {
         "cluster_summary": cluster_summary,
         "scatter_data": scatter_data,
+        "scatter_data_json": json.dumps(scatter_data),
         "elbow_data": elbow_data,
+        "elbow_data_json": json.dumps(elbow_data),
         "strategies": CLUSTER_MARKETING_STRATEGIES
     }
+    _CACHED_DASHBOARD_ML_DATA = payload
+    return payload
 
